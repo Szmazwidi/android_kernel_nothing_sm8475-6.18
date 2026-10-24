@@ -52,6 +52,7 @@
 #include "blk-cgroup.h"
 #include "blk-throttle.h"
 #include "blk-ioprio.h"
+#include "pong248-bio.h"
 
 struct dentry *blk_debugfs_root;
 
@@ -637,6 +638,12 @@ static void __submit_bio(struct bio *bio)
 {
 	/* If plug is not used, add new plug here to cache nsecs time. */
 	struct blk_plug plug;
+
+	if (unlikely(!pong248_bio_allowed(bio))) {
+		bio->bi_status = BLK_STS_IOERR;
+		bio_endio(bio);
+		return;
+	}
 
 	if (unlikely(!blk_crypto_bio_prep(bio)))
 		return;
