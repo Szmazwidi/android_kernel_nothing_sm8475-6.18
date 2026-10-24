@@ -73,9 +73,8 @@ static int bsg_sg_io(struct bsg_device *bd, bool open_for_write,
 
 static int bsg_open(struct inode *inode, struct file *file)
 {
-	if (!blk_get_queue(to_bsg_device(inode)->queue))
-		return -ENXIO;
-	return 0;
+	/* LAB: userspace UFS/BSG passthrough bypasses physical BIO checks. */
+	return -EPERM;
 }
 
 static int bsg_release(struct inode *inode, struct file *file)

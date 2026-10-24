@@ -884,6 +884,19 @@ int scsi_ioctl(struct scsi_device *sdev, bool open_for_write, int cmd,
 	struct request_queue *q = sdev->request_queue;
 	struct scsi_sense_hdr sense_hdr;
 
+	/* LAB: keep userspace command packets out of the storage firmware path. */
+	switch (cmd) {
+	case SG_IO:
+	case SG_SCSI_RESET:
+	case SCSI_IOCTL_SEND_COMMAND:
+	case SCSI_IOCTL_BENCHMARK_COMMAND:
+	case SCSI_IOCTL_START_UNIT:
+	case SCSI_IOCTL_STOP_UNIT:
+		return -EPERM;
+	default:
+		break;
+	}
+
 	/* Check for deprecated ioctls ... all the ioctls which don't
 	 * follow the new unique numbering scheme are deprecated */
 	switch (cmd) {
