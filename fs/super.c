@@ -1669,6 +1669,40 @@ EXPORT_SYMBOL_GPL(setup_bdev_super);
  * @fill_super: Helper to initialise a new superblock
  * @flags: GET_TREE_BDEV_* flags
  */
+/* LAB: normal fstab may request RW persist/qmcs. Mount protected physical
+ * partitions RO instead of letting their journal replay hit the BIO guard.
+ * The BIO guard still enforces writes through arbitrary DM/raw aliases. */
+#include "../block/pong248-range.h"
+#include <linux/pong309-ufs.h>
+static int pong251_mount_policy(struct fs_context *fc, dev_t dev)
+{
+    struct file *file;
+    struct block_device *bdev;
+    const char *name;
+    bool writable;
+
+    if (fc->sb_flags & SB_RDONLY)
+        return 0;
+    file = bdev_file_open_by_dev(dev, BLK_OPEN_READ, NULL, NULL);
+    if (IS_ERR(file))
+        return PTR_ERR(file);
+    bdev = file_bdev(file);
+    name = bdev->bd_disk->disk_name;
+    writable = !strncmp(name, "dm-", 3) || !strncmp(name, "loop", 4) ||
+               !strncmp(name, "zram", 4) || !strncmp(name, "ram", 3);
+    if (pong309_is_data_lun(bdev->bd_disk, PONG248_CAPACITY))
+        writable = pong248_range_allowed(get_capacity(bdev->bd_disk),
+                                         bdev->bd_start_sect,
+                                         bdev_nr_sectors(bdev), 1);
+    if (!writable) {
+        fc->sb_flags |= SB_RDONLY;
+        pr_info("PONG251_FORCE_RO_MOUNT source=%s policy=%s\n",
+                fc->source, PONG248_POLICY_ID);
+    }
+    bdev_fput(file);
+    return 0;
+}
+
 int get_tree_bdev_flags(struct fs_context *fc,
 		int (*fill_super)(struct super_block *sb,
 				  struct fs_context *fc), unsigned int flags)
@@ -1686,6 +1720,9 @@ int get_tree_bdev_flags(struct fs_context *fc,
 			errorf(fc, "%s: Can't lookup blockdev", fc->source);
 		return error;
 	}
+	error = pong251_mount_policy(fc, dev);
+	if (error)
+		return error;
 	fc->sb_flags |= SB_NOSEC;
 	s = sget_dev(fc, dev);
 	if (IS_ERR(s))
