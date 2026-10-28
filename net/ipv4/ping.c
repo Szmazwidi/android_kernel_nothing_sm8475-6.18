@@ -945,8 +945,7 @@ static enum skb_drop_reason __ping_queue_rcv_skb(struct sock *sk,
 
 	pr_debug("ping_queue_rcv_skb(sk=%p,sk->num=%d,skb=%p)\n",
 		 inet_sk(sk), inet_sk(sk)->inet_num, skb);
-	reason = sock_queue_rcv_skb_reason(sk, skb);
-	if (reason) {
+	if (sock_queue_rcv_skb_reason(sk, skb, &reason) < 0) {
 		sk_skb_reason_drop(sk, skb, reason);
 		pr_debug("ping_queue_rcv_skb -> failed\n");
 		return reason;

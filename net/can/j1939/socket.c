@@ -332,8 +332,7 @@ static void j1939_sk_recv_one(struct j1939_sock *jsk, struct sk_buff *oskb)
 	if (skb->sk)
 		skcb->msg_flags |= MSG_DONTROUTE;
 
-	reason = sock_queue_rcv_skb_reason(&jsk->sk, skb);
-	if (reason)
+	if (sock_queue_rcv_skb_reason(&jsk->sk, skb, &reason) < 0)
 		sk_skb_reason_drop(&jsk->sk, skb, reason);
 }
 

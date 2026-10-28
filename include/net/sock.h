@@ -2482,23 +2482,12 @@ int __sk_queue_drop_skb(struct sock *sk, struct sk_buff_head *sk_queue,
 					   struct sk_buff *skb));
 int __sock_queue_rcv_skb(struct sock *sk, struct sk_buff *skb);
 
-enum skb_drop_reason
-sock_queue_rcv_skb_reason(struct sock *sk, struct sk_buff *skb);
+int sock_queue_rcv_skb_reason(struct sock *sk, struct sk_buff *skb,
+			      enum skb_drop_reason *reason);
 
 static inline int sock_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
-	enum skb_drop_reason drop_reason = sock_queue_rcv_skb_reason(sk, skb);
-
-	switch (drop_reason) {
-	case SKB_DROP_REASON_SOCKET_RCVBUFF:
-		return -ENOMEM;
-	case SKB_DROP_REASON_PROTO_MEM:
-		return -ENOBUFS;
-	case 0:
-		return 0;
-	default:
-		return -EPERM;
-	}
+	return sock_queue_rcv_skb_reason(sk, skb, NULL);
 }
 
 int sock_queue_err_skb(struct sock *sk, struct sk_buff *skb);

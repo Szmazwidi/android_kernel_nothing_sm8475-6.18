@@ -523,24 +523,32 @@ int __sock_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
 }
 EXPORT_SYMBOL(__sock_queue_rcv_skb);
 
-enum skb_drop_reason
-sock_queue_rcv_skb_reason(struct sock *sk, struct sk_buff *skb)
+int sock_queue_rcv_skb_reason(struct sock *sk, struct sk_buff *skb,
+			      enum skb_drop_reason *reason)
 {
 	enum skb_drop_reason drop_reason;
 	int err;
 
 	err = sk_filter_reason(sk, skb, &drop_reason);
 	if (err)
-		return drop_reason;
+		goto out;
 
 	err = __sock_queue_rcv_skb(sk, skb);
 	switch (err) {
 	case -ENOMEM:
-		return SKB_DROP_REASON_SOCKET_RCVBUFF;
+		drop_reason = SKB_DROP_REASON_SOCKET_RCVBUFF;
+		break;
 	case -ENOBUFS:
-		return SKB_DROP_REASON_PROTO_MEM;
+		drop_reason = SKB_DROP_REASON_PROTO_MEM;
+		break;
+	default:
+		drop_reason = SKB_NOT_DROPPED_YET;
+		break;
 	}
-	return SKB_NOT_DROPPED_YET;
+out:
+	if (reason)
+		*reason = drop_reason;
+	return err;
 }
 EXPORT_SYMBOL(sock_queue_rcv_skb_reason);
 

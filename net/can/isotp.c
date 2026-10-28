@@ -358,8 +358,7 @@ static void isotp_rcv_skb(struct sk_buff *skb, struct sock *sk)
 	addr->can_family = AF_CAN;
 	addr->can_ifindex = skb->dev->ifindex;
 
-	reason = sock_queue_rcv_skb_reason(sk, skb);
-	if (reason)
+	if (sock_queue_rcv_skb_reason(sk, skb, &reason) < 0)
 		sk_skb_reason_drop(sk, skb, reason);
 }
 

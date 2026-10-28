@@ -368,8 +368,7 @@ static inline int rawv6_rcv_skb(struct sock *sk, struct sk_buff *skb)
 
 	/* Charge it to the socket. */
 	skb_dst_drop(skb);
-	reason = sock_queue_rcv_skb_reason(sk, skb);
-	if (reason) {
+	if (sock_queue_rcv_skb_reason(sk, skb, &reason) < 0) {
 		sk_skb_reason_drop(sk, skb, reason);
 		return NET_RX_DROP;
 	}
