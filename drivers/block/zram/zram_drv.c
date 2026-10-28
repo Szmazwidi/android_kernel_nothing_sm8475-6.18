@@ -1880,7 +1880,6 @@ static ssize_t read_block_state(struct file *file, char __user *buf,
 
 	for (index = *ppos; index < nr_pages; index++) {
 		int copied;
-		struct timespec64 ts;
 
 		slot_lock(zram, index);
 		if (!slot_allocated(zram, index))
