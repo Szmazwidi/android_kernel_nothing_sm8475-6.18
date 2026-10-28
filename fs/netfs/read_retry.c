@@ -98,12 +98,7 @@ static void netfs_retry_read_subrequests(struct netfs_io_request *rreq)
 			goto abandon;
 		}
 
-		for (;;) {
-			/* Read pointer to subreq before reading subreq state. */
-			next = smp_load_acquire(&next->next);
-			if (next == &stream->subrequests)
-				break;
-
+		list_for_each_continue(next, &stream->subrequests) {
 			subreq = list_entry(next, struct netfs_io_subrequest, rreq_link);
 			if (subreq->start + subreq->transferred != start + len ||
 			    test_bit(NETFS_SREQ_BOUNDARY, &subreq->flags) ||
@@ -180,9 +175,7 @@ static void netfs_retry_read_subrequests(struct netfs_io_request *rreq)
 			list_for_each_entry_safe_from(subreq, tmp,
 						      &stream->subrequests, rreq_link) {
 				trace_netfs_sreq(subreq, netfs_sreq_trace_superfluous);
-				spin_lock(&rreq->lock);
 				list_del(&subreq->rreq_link);
-				spin_unlock(&rreq->lock);
 				netfs_put_subrequest(subreq, netfs_sreq_trace_put_done);
 				if (subreq == to)
 					break;
@@ -210,10 +203,8 @@ static void netfs_retry_read_subrequests(struct netfs_io_request *rreq)
 					     refcount_read(&subreq->ref),
 					     netfs_sreq_trace_new);
 
-			spin_lock(&rreq->lock);
 			list_add(&subreq->rreq_link, &to->rreq_link);
-			spin_unlock(&rreq->lock);
-			to = subreq;
+			to = list_next_entry(to, rreq_link);
 			trace_netfs_sreq(subreq, netfs_sreq_trace_retry);
 
 			stream->sreq_max_len	= umin(len, rreq->rsize);
@@ -297,15 +288,8 @@ void netfs_unlock_abandoned_read_pages(struct netfs_io_request *rreq)
 			struct folio *folio = folioq_folio(p, slot);
 
 			if (folio && !folioq_is_marked2(p, slot)) {
-				if (folio == rreq->no_unlock_folio &&
-				    test_bit(NETFS_RREQ_NO_UNLOCK_FOLIO,
-					     &rreq->flags)) {
-					_debug("no unlock");
-				} else {
-					trace_netfs_folio(folio,
-						netfs_folio_trace_abandon);
-					folio_unlock(folio);
-				}
+				trace_netfs_folio(folio, netfs_folio_trace_abandon);
+				folio_unlock(folio);
 			}
 		}
 	}
