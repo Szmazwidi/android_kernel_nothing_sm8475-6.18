@@ -989,8 +989,8 @@ out:
 		if (sbi->cprc_info.f2fs_issue_ckpt)
 			set_user_nice(sbi->cprc_info.f2fs_issue_ckpt,
 					PRIO_TO_NICE(sbi->critical_task_priority));
-		if (sbi->gc_thread && sbi->gc_thread->f2fs_gc_task)
-			set_user_nice(sbi->gc_thread->f2fs_gc_task,
+		if (sbi->gc_thread.f2fs_gc_task)
+			set_user_nice(sbi->gc_thread.f2fs_gc_task,
 					PRIO_TO_NICE(sbi->critical_task_priority));
 		return count;
 	}
