@@ -19,7 +19,6 @@
 #include "io_uring.h"
 #include "tctx.h"
 #include "napi.h"
-#include "cancel.h"
 #include "sqpoll.h"
 
 #define IORING_SQPOLL_CAP_ENTRIES_VALUE 8
