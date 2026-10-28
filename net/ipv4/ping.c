@@ -847,7 +847,8 @@ do_confirm:
 	goto out;
 }
 
-int ping_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int flags)
+int ping_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int flags,
+		 int *addr_len)
 {
 	struct inet_sock *isk = inet_sk(sk);
 	int family = sk->sk_family;
@@ -862,7 +863,7 @@ int ping_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int flags)
 		goto out;
 
 	if (flags & MSG_ERRQUEUE)
-		return inet_recv_error(sk, msg, len);
+		return inet_recv_error(sk, msg, len, addr_len);
 
 	skb = skb_recv_datagram(sk, flags, &err);
 	if (!skb)
@@ -890,7 +891,7 @@ int ping_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int flags)
 			sin->sin_port = 0 /* skb->h.uh->source */;
 			sin->sin_addr.s_addr = ip_hdr(skb)->saddr;
 			memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
-			msg->msg_namelen = sizeof(*sin);
+			*addr_len = sizeof(*sin);
 		}
 
 		if (inet_cmsg_flags(isk))
@@ -911,7 +912,7 @@ int ping_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int flags)
 			sin6->sin6_scope_id =
 				ipv6_iface_scope_id(&sin6->sin6_addr,
 						    inet6_iif(skb));
-			msg->msg_namelen = sizeof(*sin6);
+			*addr_len = sizeof(*sin6);
 		}
 
 		if (inet6_sk(sk)->rxopt.all)

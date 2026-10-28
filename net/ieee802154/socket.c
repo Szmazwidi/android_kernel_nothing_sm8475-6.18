@@ -313,7 +313,7 @@ out:
 }
 
 static int raw_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
-		       int flags)
+		       int flags, int *addr_len)
 {
 	size_t copied = 0;
 	int err = -EOPNOTSUPP;
@@ -703,7 +703,7 @@ out:
 }
 
 static int dgram_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
-			 int flags)
+			 int flags, int *addr_len)
 {
 	size_t copied = 0;
 	int err = -EOPNOTSUPP;
@@ -737,7 +737,7 @@ static int dgram_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 
 		saddr->family = AF_IEEE802154;
 		ieee802154_addr_to_sa(&saddr->addr, &mac_cb(skb)->source);
-		msg->msg_namelen = sizeof(*saddr);
+		*addr_len = sizeof(*saddr);
 	}
 
 	if (ro->want_lqi) {

@@ -12,13 +12,13 @@
 static struct proto *udpv6_prot_saved __read_mostly;
 
 static int sk_udp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
-			  int flags)
+			  int flags, int *addr_len)
 {
 #if IS_ENABLED(CONFIG_IPV6)
 	if (sk->sk_family == AF_INET6)
-		return udpv6_prot_saved->recvmsg(sk, msg, len, flags);
+		return udpv6_prot_saved->recvmsg(sk, msg, len, flags, addr_len);
 #endif
-	return udp_prot.recvmsg(sk, msg, len, flags);
+	return udp_prot.recvmsg(sk, msg, len, flags, addr_len);
 }
 
 static bool udp_sk_has_data(struct sock *sk)
@@ -63,23 +63,23 @@ static int udp_msg_wait_data(struct sock *sk, struct sk_psock *psock,
 }
 
 static int udp_bpf_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
-			   int flags)
+			   int flags, int *addr_len)
 {
 	struct sk_psock *psock;
 	int copied, ret;
 
 	if (unlikely(flags & MSG_ERRQUEUE))
-		return inet_recv_error(sk, msg, len);
+		return inet_recv_error(sk, msg, len, addr_len);
 
 	if (!len)
 		return 0;
 
 	psock = sk_psock_get(sk);
 	if (unlikely(!psock))
-		return sk_udp_recvmsg(sk, msg, len, flags);
+		return sk_udp_recvmsg(sk, msg, len, flags, addr_len);
 
 	if (!psock_has_data(psock)) {
-		ret = sk_udp_recvmsg(sk, msg, len, flags);
+		ret = sk_udp_recvmsg(sk, msg, len, flags, addr_len);
 		goto out;
 	}
 
@@ -98,7 +98,7 @@ msg_bytes_ready:
 
 			release_sock(sk);
 
-			ret = sk_udp_recvmsg(sk, msg, len, flags);
+			ret = sk_udp_recvmsg(sk, msg, len, flags, addr_len);
 			goto out;
 		}
 		copied = -EAGAIN;

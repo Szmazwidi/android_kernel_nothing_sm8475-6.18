@@ -159,7 +159,7 @@ err_nopeer:
 }
 
 static int ovpn_tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
-			    int flags)
+			    int flags, int *addr_len)
 {
 	int err = 0, off, copied = 0, ret;
 	struct ovpn_socket *sock;

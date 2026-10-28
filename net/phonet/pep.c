@@ -1278,7 +1278,7 @@ struct sk_buff *pep_read(struct sock *sk)
 }
 
 static int pep_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
-		       int flags)
+		       int flags, int *addr_len)
 {
 	struct sk_buff *skb;
 	int err;
