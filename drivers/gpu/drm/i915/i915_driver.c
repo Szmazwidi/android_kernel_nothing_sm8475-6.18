@@ -978,7 +978,7 @@ void i915_driver_shutdown(struct drm_i915_private *i915)
 	intel_runtime_pm_disable(&i915->runtime_pm);
 	intel_power_domains_disable(display);
 
-	drm_client_dev_suspend(&i915->drm);
+	drm_client_dev_suspend(&i915->drm, false);
 	if (intel_display_device_present(display)) {
 		drm_kms_helper_poll_disable(&i915->drm);
 		intel_display_driver_disable_user_access(display);
@@ -1061,7 +1061,7 @@ static int i915_drm_suspend(struct drm_device *dev)
 	/* We do a lot of poking in a lot of registers, make sure they work
 	 * properly. */
 	intel_power_domains_disable(display);
-	drm_client_dev_suspend(dev);
+	drm_client_dev_suspend(dev, false);
 	if (intel_display_device_present(display)) {
 		drm_kms_helper_poll_disable(dev);
 		intel_display_driver_disable_user_access(display);
@@ -1245,7 +1245,7 @@ static int i915_drm_resume(struct drm_device *dev)
 
 	intel_opregion_resume(display);
 
-	drm_client_dev_resume(dev);
+	drm_client_dev_resume(dev, false);
 
 	intel_power_domains_enable(display);
 
