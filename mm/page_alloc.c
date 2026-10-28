@@ -4492,24 +4492,8 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 		.order = order,
 		.page = NULL,
 	};
-	int compact_order = order;
 
-	/*
-	 * If fallbacks are not permitted (defrag_mode), we either
-	 * need to reclaim space in a block of matching type, or clear
-	 * out an entire block to allow __rmqueue_claim() to convert.
-	 *
-	 * Reclaim by itself is primarily freeing space in movable
-	 * blocks, since that's where the LRU pages live. So this
-	 * works for movable requests, but not for others.
-	 *
-	 * For those, promote the order to help make blocks, instead
-	 * of spinning in reclaim alone unproductively.
-	 */
-	if ((alloc_flags & ALLOC_NOFRAGMENT) && ac->migratetype != MIGRATE_MOVABLE)
-		compact_order = max(order, pageblock_order);
-
-	if (!compact_order)
+	if (!order)
 		return NULL;
 
 	psi_memstall_enter(&pflags);
@@ -4525,8 +4509,8 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 	barrier();
 	WRITE_ONCE(current->capture_control, &capc);
 
-	*compact_result = try_to_compact_pages(gfp_mask, compact_order,
-					       alloc_flags, ac, prio, &capc);
+	*compact_result = try_to_compact_pages(gfp_mask, order, alloc_flags, ac,
+							       prio, &capc);
 
 	/*
 	 * Make sure we hide capture control first before we read the captured
@@ -4570,7 +4554,7 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 		struct zone *zone = page_zone(page);
 
 		zone->compact_blockskip_flush = false;
-		compaction_defer_reset(zone, compact_order, true);
+		compaction_defer_reset(zone, order, true);
 		count_vm_event(COMPACTSUCCESS);
 		return page;
 	}
@@ -4816,16 +4800,11 @@ __alloc_pages_direct_reclaim(gfp_t gfp_mask, unsigned int order,
 	bool drained = false;
 	bool skip_pcp_drain = false;
 	u64 stime = 0;
-	int reclaim_order = order;
-
-	/* Match the slowpath compaction promotion in __alloc_pages_direct_compact */
-	if ((alloc_flags & ALLOC_NOFRAGMENT) && ac->migratetype != MIGRATE_MOVABLE)
-		reclaim_order = max(order, pageblock_order);
 
 	trace_android_vh_mm_direct_reclaim_enter(order);
 	trace_android_vh_mm_direct_reclaim_start(&stime);
 	psi_memstall_enter(&pflags);
-	*did_some_progress = __perform_reclaim(gfp_mask, reclaim_order, ac);
+	*did_some_progress = __perform_reclaim(gfp_mask, order, ac);
 	if (unlikely(!(*did_some_progress)))
 		goto out;
 
