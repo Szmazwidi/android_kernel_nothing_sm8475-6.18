@@ -30,8 +30,7 @@ struct mnt_namespace {
 } __randomize_layout;
 
 struct mnt_pcp {
-	unsigned int mnt_gets;
-	unsigned int mnt_puts;
+	int mnt_count;
 	int mnt_writers;
 };
 
