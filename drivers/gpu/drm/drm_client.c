@@ -17,7 +17,6 @@
 #include <drm/drm_fourcc.h>
 #include <drm/drm_framebuffer.h>
 #include <drm/drm_gem.h>
-#include <drm/drm_gem_framebuffer_helper.h>
 #include <drm/drm_mode.h>
 #include <drm/drm_print.h>
 
@@ -175,17 +174,17 @@ EXPORT_SYMBOL(drm_client_release);
 
 static void drm_client_buffer_delete(struct drm_client_buffer *buffer)
 {
-	struct drm_gem_object *gem = buffer->fb->obj[0];
 	int ret;
-
-	drm_gem_vunmap(gem, &buffer->map);
 
 	ret = drm_mode_rmfb(buffer->client->dev, buffer->fb->base.id, buffer->client->file);
 	if (ret)
 		drm_err(buffer->client->dev,
 			"Error removing FB:%u (%d)\n", buffer->fb->base.id, ret);
 
-	drm_gem_object_put(buffer->gem);
+	if (buffer->gem) {
+		drm_gem_vunmap(buffer->gem, &buffer->map);
+		drm_gem_object_put(buffer->gem);
+	}
 
 	kfree(buffer);
 }
@@ -275,7 +274,7 @@ err_delete:
 int drm_client_buffer_vmap_local(struct drm_client_buffer *buffer,
 				 struct iosys_map *map_copy)
 {
-	struct drm_gem_object *gem = buffer->fb->obj[0];
+	struct drm_gem_object *gem = buffer->gem;
 	struct iosys_map *map = &buffer->map;
 	int ret;
 
@@ -304,7 +303,7 @@ EXPORT_SYMBOL(drm_client_buffer_vmap_local);
  */
 void drm_client_buffer_vunmap_local(struct drm_client_buffer *buffer)
 {
-	struct drm_gem_object *gem = buffer->fb->obj[0];
+	struct drm_gem_object *gem = buffer->gem;
 	struct iosys_map *map = &buffer->map;
 
 	drm_gem_vunmap_locked(gem, map);
@@ -335,10 +334,9 @@ EXPORT_SYMBOL(drm_client_buffer_vunmap_local);
 int drm_client_buffer_vmap(struct drm_client_buffer *buffer,
 			   struct iosys_map *map_copy)
 {
-	struct drm_gem_object *gem = buffer->fb->obj[0];
 	int ret;
 
-	ret = drm_gem_vmap(gem, &buffer->map);
+	ret = drm_gem_vmap(buffer->gem, &buffer->map);
 	if (ret)
 		return ret;
 	*map_copy = buffer->map;
@@ -357,9 +355,7 @@ EXPORT_SYMBOL(drm_client_buffer_vmap);
  */
 void drm_client_buffer_vunmap(struct drm_client_buffer *buffer)
 {
-	struct drm_gem_object *gem = buffer->fb->obj[0];
-
-	drm_gem_vunmap(gem, &buffer->map);
+	drm_gem_vunmap(buffer->gem, &buffer->map);
 }
 EXPORT_SYMBOL(drm_client_buffer_vunmap);
 
