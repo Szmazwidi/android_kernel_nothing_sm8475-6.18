@@ -339,7 +339,6 @@ int bio_split_io_at(struct bio *bio, const struct queue_limits *lim,
 	struct bio_vec bv, bvprv, *bvprvp = NULL;
 	unsigned nsegs = 0, bytes = 0, gaps = 0;
 	struct bvec_iter iter;
-	unsigned nsegs = 0, bytes = 0;
 	unsigned start_align_mask = lim->dma_alignment;
 
 	if (bc) {
