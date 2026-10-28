@@ -132,7 +132,7 @@ static DECLARE_WORK(deferred_probe_work, deferred_probe_work_func);
 
 void driver_deferred_probe_add(struct device *dev)
 {
-	if (!dev_can_match(dev))
+	if (!dev->can_match)
 		return;
 
 	mutex_lock(&deferred_probe_mutex);
@@ -327,11 +327,12 @@ void deferred_probe_extend_timeout(void)
 	 * If the work hasn't been queued yet or if the work expired, don't
 	 * start a new one.
 	 */
-	if (delayed_work_pending(&deferred_probe_timeout_work) &&
-	    mod_delayed_work(system_percpu_wq, &deferred_probe_timeout_work,
-			     secs_to_jiffies(driver_deferred_probe_timeout)))
+	if (cancel_delayed_work(&deferred_probe_timeout_work)) {
+		schedule_delayed_work(&deferred_probe_timeout_work,
+				driver_deferred_probe_timeout * HZ);
 		pr_debug("Extended deferred probe timeout by %d secs\n",
 					driver_deferred_probe_timeout);
+	}
 }
 
 /**
@@ -991,7 +992,7 @@ static int __device_attach_driver(struct device_driver *drv, void *_data)
 		return 0;
 	} else if (ret == -EPROBE_DEFER) {
 		dev_dbg(dev, "Device match requests probe deferral\n");
-		dev_set_can_match(dev);
+		dev->can_match = true;
 		driver_deferred_probe_add(dev);
 		/*
 		 * Device can't match with a driver right now, so don't attempt
@@ -1235,7 +1236,7 @@ static int __driver_attach(struct device *dev, void *data)
 		return 0;
 	} else if (ret == -EPROBE_DEFER) {
 		dev_dbg(dev, "Device match requests probe deferral\n");
-		dev_set_can_match(dev);
+		dev->can_match = true;
 		driver_deferred_probe_add(dev);
 		/*
 		 * Driver could not match with device, but may match with
