@@ -982,7 +982,7 @@ u32 au1xxx_dbdma_put_dscr(u32 chanid, au1x_ddma_desc_t *dscr)
 
 static unsigned long alchemy_dbdma_pm_data[NUM_DBDMA_CHANS + 1][6];
 
-static int alchemy_dbdma_suspend(void *data)
+static int alchemy_dbdma_suspend(void)
 {
 	int i;
 	void __iomem *addr;
@@ -1019,7 +1019,7 @@ static int alchemy_dbdma_suspend(void *data)
 	return 0;
 }
 
-static void alchemy_dbdma_resume(void *data)
+static void alchemy_dbdma_resume(void)
 {
 	int i;
 	void __iomem *addr;
@@ -1044,13 +1044,9 @@ static void alchemy_dbdma_resume(void *data)
 	}
 }
 
-static const struct syscore_ops alchemy_dbdma_syscore_ops = {
+static struct syscore_ops alchemy_dbdma_syscore_ops = {
 	.suspend	= alchemy_dbdma_suspend,
 	.resume		= alchemy_dbdma_resume,
-};
-
-static struct syscore alchemy_dbdma_syscore = {
-	.ops = &alchemy_dbdma_syscore_ops,
 };
 
 static int __init dbdma_setup(unsigned int irq, dbdev_tab_t *idtable)
@@ -1075,7 +1071,7 @@ static int __init dbdma_setup(unsigned int irq, dbdev_tab_t *idtable)
 		printk(KERN_ERR "Cannot grab DBDMA interrupt!\n");
 	else {
 		dbdma_initialized = 1;
-		register_syscore(&alchemy_dbdma_syscore);
+		register_syscore_ops(&alchemy_dbdma_syscore_ops);
 	}
 
 	return ret;

@@ -5101,13 +5101,9 @@ void its_restore_enable(void)
 }
 EXPORT_SYMBOL_GPL(its_restore_enable);
 
-static const struct syscore_ops its_syscore_ops = {
+static struct syscore_ops its_syscore_ops = {
 	.suspend = its_save_disable,
 	.resume = its_restore_enable,
-};
-
-static struct syscore its_syscore = {
-	.ops = &its_syscore_ops,
 };
 
 static void __init __iomem *its_map_one(struct resource *res, int *err)
@@ -5888,7 +5884,7 @@ int __init its_init(struct fwnode_handle *handle, struct rdists *rdists,
 		}
 	}
 
-	register_syscore(&its_syscore);
+	register_syscore_ops(&its_syscore_ops);
 
 	return 0;
 }

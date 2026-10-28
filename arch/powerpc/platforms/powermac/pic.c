@@ -600,7 +600,7 @@ not_found:
 	return viaint;
 }
 
-static int pmacpic_suspend(void *data)
+static int pmacpic_suspend(void)
 {
 	int viaint = pmacpic_find_viaint();
 
@@ -621,7 +621,7 @@ static int pmacpic_suspend(void *data)
         return 0;
 }
 
-static void pmacpic_resume(void *data)
+static void pmacpic_resume(void)
 {
 	int i;
 
@@ -634,19 +634,15 @@ static void pmacpic_resume(void *data)
 			pmac_unmask_irq(irq_get_irq_data(i));
 }
 
-static const struct syscore_ops pmacpic_syscore_ops = {
+static struct syscore_ops pmacpic_syscore_ops = {
 	.suspend	= pmacpic_suspend,
 	.resume		= pmacpic_resume,
-};
-
-static struct syscore pmacpic_syscore = {
-	.ops = &pmacpic_syscore_ops,
 };
 
 static int __init init_pmacpic_syscore(void)
 {
 	if (pmac_irq_hw[0])
-		register_syscore(&pmacpic_syscore);
+		register_syscore_ops(&pmacpic_syscore_ops);
 	return 0;
 }
 

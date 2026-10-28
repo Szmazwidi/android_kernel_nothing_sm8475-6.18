@@ -3732,13 +3732,12 @@ static bool legacy_kthread_create(void)
 
 /**
  * printk_kthreads_shutdown - shutdown all threaded printers
- * @data: syscore context
  *
  * On system shutdown all threaded printers are stopped. This allows printk
  * to transition back to atomic printing, thus providing a robust mechanism
  * for the final shutdown/reboot messages to be output.
  */
-static void printk_kthreads_shutdown(void *data)
+static void printk_kthreads_shutdown(void)
 {
 	struct console *con;
 
@@ -3760,12 +3759,8 @@ static void printk_kthreads_shutdown(void *data)
 	console_list_unlock();
 }
 
-static const struct syscore_ops printk_syscore_ops = {
+static struct syscore_ops printk_syscore_ops = {
 	.shutdown = printk_kthreads_shutdown,
-};
-
-static struct syscore printk_syscore = {
-	.ops = &printk_syscore_ops,
 };
 
 /*
@@ -3835,7 +3830,7 @@ static void printk_kthreads_check_locked(void)
 
 static int __init printk_set_kthreads_ready(void)
 {
-	register_syscore(&printk_syscore);
+	register_syscore_ops(&printk_syscore_ops);
 
 	console_list_lock();
 	printk_kthreads_ready = true;

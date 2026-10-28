@@ -351,7 +351,7 @@ static int __init hv_pci_init(void)
 	return 1;
 }
 
-static int hv_suspend(void *data)
+static int hv_suspend(void)
 {
 	union hv_x64_msr_hypercall_contents hypercall_msr;
 	int ret;
@@ -378,7 +378,7 @@ static int hv_suspend(void *data)
 	return ret;
 }
 
-static void hv_resume(void *data)
+static void hv_resume(void)
 {
 	union hv_x64_msr_hypercall_contents hypercall_msr;
 	int ret;
@@ -405,13 +405,9 @@ static void hv_resume(void *data)
 }
 
 /* Note: when the ops are called, only CPU0 is online and IRQs are disabled. */
-static const struct syscore_ops hv_syscore_ops = {
+static struct syscore_ops hv_syscore_ops = {
 	.suspend	= hv_suspend,
 	.resume		= hv_resume,
-};
-
-static struct syscore hv_syscore = {
-	.ops = &hv_syscore_ops,
 };
 
 static void (* __initdata old_setup_percpu_clockev)(void);
@@ -573,7 +569,7 @@ skip_hypercall_pg_init:
 
 	x86_init.pci.arch_init = hv_pci_init;
 
-	register_syscore(&hv_syscore);
+	register_syscore_ops(&hv_syscore_ops);
 
 	if (ms_hyperv.priv_high & HV_ACCESS_PARTITION_ID)
 		hv_get_partition_id();

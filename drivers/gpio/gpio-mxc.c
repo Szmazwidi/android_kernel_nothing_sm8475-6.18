@@ -683,7 +683,7 @@ static const struct dev_pm_ops mxc_gpio_dev_pm_ops = {
 	RUNTIME_PM_OPS(mxc_gpio_runtime_suspend, mxc_gpio_runtime_resume, NULL)
 };
 
-static int mxc_gpio_syscore_suspend(void *data)
+static int mxc_gpio_syscore_suspend(void)
 {
 	struct mxc_gpio_port *port;
 	int ret;
@@ -700,7 +700,7 @@ static int mxc_gpio_syscore_suspend(void *data)
 	return 0;
 }
 
-static void mxc_gpio_syscore_resume(void *data)
+static void mxc_gpio_syscore_resume(void)
 {
 	struct mxc_gpio_port *port;
 	int ret;
@@ -717,13 +717,9 @@ static void mxc_gpio_syscore_resume(void *data)
 	}
 }
 
-static const struct syscore_ops mxc_gpio_syscore_ops = {
+static struct syscore_ops mxc_gpio_syscore_ops = {
 	.suspend = mxc_gpio_syscore_suspend,
 	.resume = mxc_gpio_syscore_resume,
-};
-
-static struct syscore mxc_gpio_syscore = {
-	.ops = &mxc_gpio_syscore_ops,
 };
 
 static struct platform_driver mxc_gpio_driver = {
@@ -738,7 +734,7 @@ static struct platform_driver mxc_gpio_driver = {
 
 static int __init gpio_mxc_init(void)
 {
-	register_syscore(&mxc_gpio_syscore);
+	register_syscore_ops(&mxc_gpio_syscore_ops);
 
 	return platform_driver_register(&mxc_gpio_driver);
 }

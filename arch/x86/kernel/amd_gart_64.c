@@ -591,7 +591,7 @@ static void gart_fixup_northbridges(void)
 	}
 }
 
-static void gart_resume(void *data)
+static void gart_resume(void)
 {
 	pr_info("PCI-DMA: Resuming GART IOMMU\n");
 
@@ -600,13 +600,9 @@ static void gart_resume(void *data)
 	enable_gart_translations();
 }
 
-static const struct syscore_ops gart_syscore_ops = {
+static struct syscore_ops gart_syscore_ops = {
 	.resume		= gart_resume,
 
-};
-
-static struct syscore gart_syscore = {
-	.ops = &gart_syscore_ops,
 };
 
 /*
@@ -654,7 +650,7 @@ static __init int init_amd_gatt(struct agp_kern_info *info)
 
 	agp_gatt_table = gatt;
 
-	register_syscore(&gart_syscore);
+	register_syscore_ops(&gart_syscore_ops);
 
 	flush_gart();
 

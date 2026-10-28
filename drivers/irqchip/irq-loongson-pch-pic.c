@@ -278,7 +278,7 @@ static void pch_pic_reset(struct pch_pic *priv)
 	}
 }
 
-static int pch_pic_suspend(void *data)
+static int pch_pic_suspend(void)
 {
 	int i, j;
 
@@ -296,7 +296,7 @@ static int pch_pic_suspend(void *data)
 	return 0;
 }
 
-static void pch_pic_resume(void *data)
+static void pch_pic_resume(void)
 {
 	int i, j;
 
@@ -313,13 +313,9 @@ static void pch_pic_resume(void *data)
 	}
 }
 
-static const struct syscore_ops pch_pic_syscore_ops = {
+static struct syscore_ops pch_pic_syscore_ops = {
 	.suspend =  pch_pic_suspend,
 	.resume =  pch_pic_resume,
-};
-
-static struct syscore pch_pic_syscore = {
-	.ops = &pch_pic_syscore_ops,
 };
 
 static int pch_pic_init(phys_addr_t addr, unsigned long size, int vec_base,
@@ -360,7 +356,7 @@ static int pch_pic_init(phys_addr_t addr, unsigned long size, int vec_base,
 	pch_pic_priv[nr_pics++] = priv;
 
 	if (nr_pics == 1)
-		register_syscore(&pch_pic_syscore);
+		register_syscore_ops(&pch_pic_syscore_ops);
 
 	return 0;
 

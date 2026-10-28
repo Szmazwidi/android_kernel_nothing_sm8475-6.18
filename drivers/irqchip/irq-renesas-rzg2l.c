@@ -398,7 +398,7 @@ static int rzg2l_irqc_set_type(struct irq_data *d, unsigned int type)
 	return irq_chip_set_type_parent(d, IRQ_TYPE_LEVEL_HIGH);
 }
 
-static int rzg2l_irqc_irq_suspend(void *data)
+static int rzg2l_irqc_irq_suspend(void)
 {
 	struct rzg2l_irqc_reg_cache *cache = &rzg2l_irqc_data->cache;
 	void __iomem *base = rzg2l_irqc_data->base;
@@ -410,7 +410,7 @@ static int rzg2l_irqc_irq_suspend(void *data)
 	return 0;
 }
 
-static void rzg2l_irqc_irq_resume(void *data)
+static void rzg2l_irqc_irq_resume(void)
 {
 	struct rzg2l_irqc_reg_cache *cache = &rzg2l_irqc_data->cache;
 	void __iomem *base = rzg2l_irqc_data->base;
@@ -425,13 +425,9 @@ static void rzg2l_irqc_irq_resume(void *data)
 	writel_relaxed(cache->iitsr, base + IITSR);
 }
 
-static const struct syscore_ops rzg2l_irqc_syscore_ops = {
+static struct syscore_ops rzg2l_irqc_syscore_ops = {
 	.suspend	= rzg2l_irqc_irq_suspend,
 	.resume		= rzg2l_irqc_irq_resume,
-};
-
-static struct syscore rzg2l_irqc_syscore = {
-	.ops = &rzg2l_irqc_syscore_ops,
 };
 
 static const struct irq_chip rzg2l_irqc_chip = {
@@ -581,7 +577,7 @@ static int rzg2l_irqc_common_probe(struct platform_device *pdev, struct device_n
 		return -ENOMEM;
 	}
 
-	register_syscore(&rzg2l_irqc_syscore);
+	register_syscore_ops(&rzg2l_irqc_syscore_ops);
 
 	return 0;
 }

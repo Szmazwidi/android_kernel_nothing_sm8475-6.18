@@ -143,7 +143,7 @@ static void mst_intc_polarity_restore(struct mst_intc_chip_data *cd)
 		writew_relaxed(cd->saved_polarity_conf[i], addr + i * 4);
 }
 
-static void mst_irq_resume(void *data)
+static void mst_irq_resume(void)
 {
 	struct mst_intc_chip_data *cd;
 
@@ -151,7 +151,7 @@ static void mst_irq_resume(void *data)
 		mst_intc_polarity_restore(cd);
 }
 
-static int mst_irq_suspend(void *data)
+static int mst_irq_suspend(void)
 {
 	struct mst_intc_chip_data *cd;
 
@@ -160,18 +160,14 @@ static int mst_irq_suspend(void *data)
 	return 0;
 }
 
-static const struct syscore_ops mst_irq_syscore_ops = {
+static struct syscore_ops mst_irq_syscore_ops = {
 	.suspend	= mst_irq_suspend,
 	.resume		= mst_irq_resume,
 };
 
-static struct syscore mst_irq_syscore = {
-	.ops = &mst_irq_syscore_ops,
-};
-
 static int __init mst_irq_pm_init(void)
 {
-	register_syscore(&mst_irq_syscore);
+	register_syscore_ops(&mst_irq_syscore_ops);
 	return 0;
 }
 late_initcall(mst_irq_pm_init);

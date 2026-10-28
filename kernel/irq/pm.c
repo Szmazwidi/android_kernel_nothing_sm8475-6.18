@@ -211,26 +211,21 @@ void rearm_wake_irq(unsigned int irq)
 
 /**
  * irq_pm_syscore_resume - enable interrupt lines early
- * @data: syscore context
  *
  * Enable all interrupt lines with %IRQF_EARLY_RESUME set.
  */
-static void irq_pm_syscore_resume(void *data)
+static void irq_pm_syscore_resume(void)
 {
 	resume_irqs(true);
 }
 
-static const struct syscore_ops irq_pm_syscore_ops = {
+static struct syscore_ops irq_pm_syscore_ops = {
 	.resume		= irq_pm_syscore_resume,
-};
-
-static struct syscore irq_pm_syscore = {
-	.ops = &irq_pm_syscore_ops,
 };
 
 static int __init irq_pm_init_ops(void)
 {
-	register_syscore(&irq_pm_syscore);
+	register_syscore_ops(&irq_pm_syscore_ops);
 	return 0;
 }
 

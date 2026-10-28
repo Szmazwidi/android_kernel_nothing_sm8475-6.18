@@ -256,7 +256,7 @@ static void sa1100_gpio_handler(struct irq_desc *desc)
 	} while (mask);
 }
 
-static int sa1100_gpio_suspend(void *data)
+static int sa1100_gpio_suspend(void)
 {
 	struct sa1100_gpio_chip *sgc = &sa1100_gpio_chip;
 
@@ -275,23 +275,19 @@ static int sa1100_gpio_suspend(void *data)
 	return 0;
 }
 
-static void sa1100_gpio_resume(void *data)
+static void sa1100_gpio_resume(void)
 {
 	sa1100_update_edge_regs(&sa1100_gpio_chip);
 }
 
-static const struct syscore_ops sa1100_gpio_syscore_ops = {
+static struct syscore_ops sa1100_gpio_syscore_ops = {
 	.suspend	= sa1100_gpio_suspend,
 	.resume		= sa1100_gpio_resume,
 };
 
-static struct syscore sa1100_gpio_syscore = {
-	.ops = &sa1100_gpio_syscore_ops,
-};
-
 static int __init sa1100_gpio_init_devicefs(void)
 {
-	register_syscore(&sa1100_gpio_syscore);
+	register_syscore_ops(&sa1100_gpio_syscore_ops);
 	return 0;
 }
 

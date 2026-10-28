@@ -726,7 +726,7 @@ static void __exception_irq_entry mpic_handle_irq(struct pt_regs *regs)
 	} while (1);
 }
 
-static int mpic_suspend(void *data)
+static int mpic_suspend(void)
 {
 	struct mpic *mpic = mpic_data;
 
@@ -735,7 +735,7 @@ static int mpic_suspend(void *data)
 	return 0;
 }
 
-static void mpic_resume(void *data)
+static void mpic_resume(void)
 {
 	struct mpic *mpic = mpic_data;
 	bool src0, src1;
@@ -788,13 +788,9 @@ static void mpic_resume(void *data)
 		mpic_ipi_resume(mpic);
 }
 
-static const struct syscore_ops mpic_syscore_ops = {
+static struct syscore_ops mpic_syscore_ops = {
 	.suspend	= mpic_suspend,
 	.resume		= mpic_resume,
-};
-
-static struct syscore mpic_syscore = {
-	.ops = &mpic_syscore_ops,
 };
 
 static int __init mpic_map_region(struct device_node *np, int index,
@@ -909,7 +905,7 @@ static int __init mpic_of_init(struct device_node *node, struct device_node *par
 						 mpic_handle_cascade_irq, mpic);
 	}
 
-	register_syscore(&mpic_syscore);
+	register_syscore_ops(&mpic_syscore_ops);
 
 	return 0;
 }

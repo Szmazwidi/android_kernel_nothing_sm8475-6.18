@@ -455,7 +455,7 @@ err_free_tcu:
 	return ret;
 }
 
-static int __maybe_unused tcu_pm_suspend(void *data)
+static int __maybe_unused tcu_pm_suspend(void)
 {
 	struct ingenic_tcu *tcu = ingenic_tcu;
 
@@ -465,7 +465,7 @@ static int __maybe_unused tcu_pm_suspend(void *data)
 	return 0;
 }
 
-static void __maybe_unused tcu_pm_resume(void *data)
+static void __maybe_unused tcu_pm_resume(void)
 {
 	struct ingenic_tcu *tcu = ingenic_tcu;
 
@@ -473,13 +473,9 @@ static void __maybe_unused tcu_pm_resume(void *data)
 		clk_enable(tcu->clk);
 }
 
-static const struct syscore_ops __maybe_unused tcu_pm_ops = {
+static struct syscore_ops __maybe_unused tcu_pm_ops = {
 	.suspend = tcu_pm_suspend,
 	.resume = tcu_pm_resume,
-};
-
-static struct syscore __maybe_unused tcu_pm = {
-	.ops = &tcu_pm_ops,
 };
 
 static void __init ingenic_tcu_init(struct device_node *np)
@@ -490,7 +486,7 @@ static void __init ingenic_tcu_init(struct device_node *np)
 		pr_crit("Failed to initialize TCU clocks: %d\n", ret);
 
 	if (IS_ENABLED(CONFIG_PM_SLEEP))
-		register_syscore(&tcu_pm);
+		register_syscore_ops(&tcu_pm_ops);
 }
 
 CLK_OF_DECLARE_DRIVER(jz4740_cgu, "ingenic,jz4740-tcu", ingenic_tcu_init);

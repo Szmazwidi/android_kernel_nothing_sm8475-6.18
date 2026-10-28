@@ -182,30 +182,26 @@ static void psci_idle_syscore_switch(bool suspend)
 	}
 }
 
-static int psci_idle_syscore_suspend(void *data)
+static int psci_idle_syscore_suspend(void)
 {
 	psci_idle_syscore_switch(true);
 	return 0;
 }
 
-static void psci_idle_syscore_resume(void *data)
+static void psci_idle_syscore_resume(void)
 {
 	psci_idle_syscore_switch(false);
 }
 
-static const struct syscore_ops psci_idle_syscore_ops = {
+static struct syscore_ops psci_idle_syscore_ops = {
 	.suspend = psci_idle_syscore_suspend,
 	.resume = psci_idle_syscore_resume,
-};
-
-static struct syscore psci_idle_syscore = {
-	.ops = &psci_idle_syscore_ops,
 };
 
 static void psci_idle_init_syscore(void)
 {
 	if (psci_cpuidle_use_syscore)
-		register_syscore(&psci_idle_syscore);
+		register_syscore_ops(&psci_idle_syscore_ops);
 }
 
 static void psci_idle_init_cpuhp(void)

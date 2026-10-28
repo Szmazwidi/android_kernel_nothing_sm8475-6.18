@@ -492,7 +492,7 @@ static void xen_acpi_processor_resume_worker(struct work_struct *dummy)
 		pr_info("ACPI data upload failed, error = %d\n", rc);
 }
 
-static void xen_acpi_processor_resume(void *data)
+static void xen_acpi_processor_resume(void)
 {
 	static DECLARE_WORK(wq, xen_acpi_processor_resume_worker);
 
@@ -506,12 +506,8 @@ static void xen_acpi_processor_resume(void *data)
 	schedule_work(&wq);
 }
 
-static const struct syscore_ops xap_syscore_ops = {
+static struct syscore_ops xap_syscore_ops = {
 	.resume	= xen_acpi_processor_resume,
-};
-
-static struct syscore xap_syscore = {
-	.ops = &xap_syscore_ops,
 };
 
 static int __init xen_acpi_processor_init(void)
@@ -564,7 +560,7 @@ static int __init xen_acpi_processor_init(void)
 	if (rc)
 		goto err_unregister;
 
-	register_syscore(&xap_syscore);
+	register_syscore_ops(&xap_syscore_ops);
 
 	return 0;
 err_unregister:
@@ -581,7 +577,7 @@ static void __exit xen_acpi_processor_exit(void)
 {
 	int i;
 
-	unregister_syscore(&xap_syscore);
+	unregister_syscore_ops(&xap_syscore_ops);
 	bitmap_free(acpi_ids_done);
 	bitmap_free(acpi_id_present);
 	bitmap_free(acpi_id_cst_present);

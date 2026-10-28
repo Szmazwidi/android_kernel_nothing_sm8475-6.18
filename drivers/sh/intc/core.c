@@ -394,7 +394,7 @@ err0:
 	return -ENOMEM;
 }
 
-static int intc_suspend(void *data)
+static int intc_suspend(void)
 {
 	struct intc_desc_int *d;
 
@@ -420,7 +420,7 @@ static int intc_suspend(void *data)
 	return 0;
 }
 
-static void intc_resume(void *data)
+static void intc_resume(void)
 {
 	struct intc_desc_int *d;
 
@@ -450,13 +450,9 @@ static void intc_resume(void *data)
 	}
 }
 
-static const struct syscore_ops intc_syscore_ops = {
+struct syscore_ops intc_syscore_ops = {
 	.suspend	= intc_suspend,
 	.resume		= intc_resume,
-};
-
-static struct syscore intc_syscore = {
-	.ops = &intc_syscore_ops,
 };
 
 const struct bus_type intc_subsys = {
@@ -481,7 +477,7 @@ static int __init register_intc_devs(void)
 	struct intc_desc_int *d;
 	int error;
 
-	register_syscore(&intc_syscore);
+	register_syscore_ops(&intc_syscore_ops);
 
 	error = subsys_system_register(&intc_subsys, NULL);
 	if (!error) {

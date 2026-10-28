@@ -2895,7 +2895,7 @@ static void hv_crash_handler(struct pt_regs *regs)
 	hv_synic_disable_regs(cpu);
 };
 
-static int hv_synic_suspend(void *data)
+static int hv_synic_suspend(void)
 {
 	/*
 	 * When we reach here, all the non-boot CPUs have been offlined.
@@ -2922,7 +2922,7 @@ static int hv_synic_suspend(void *data)
 	return 0;
 }
 
-static void hv_synic_resume(void *data)
+static void hv_synic_resume(void)
 {
 	hv_synic_enable_regs(0);
 
@@ -2934,13 +2934,9 @@ static void hv_synic_resume(void *data)
 }
 
 /* The callbacks run only on CPU0, with irqs_disabled. */
-static const struct syscore_ops hv_synic_syscore_ops = {
+static struct syscore_ops hv_synic_syscore_ops = {
 	.suspend = hv_synic_suspend,
 	.resume = hv_synic_resume,
-};
-
-static struct syscore hv_synic_syscore = {
-	.ops = &hv_synic_syscore_ops,
 };
 
 static int __init hv_acpi_init(void)
@@ -2992,7 +2988,7 @@ static int __init hv_acpi_init(void)
 	hv_setup_kexec_handler(hv_kexec_handler);
 	hv_setup_crash_handler(hv_crash_handler);
 
-	register_syscore(&hv_synic_syscore);
+	register_syscore_ops(&hv_synic_syscore_ops);
 
 	return 0;
 
@@ -3014,7 +3010,7 @@ static void __exit vmbus_exit(void)
 		 */
 		return;
 
-	unregister_syscore(&hv_synic_syscore);
+	unregister_syscore_ops(&hv_synic_syscore_ops);
 
 	hv_remove_kexec_handler();
 	hv_remove_crash_handler();

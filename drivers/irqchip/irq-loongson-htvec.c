@@ -159,7 +159,7 @@ static void htvec_reset(struct htvec *priv)
 	}
 }
 
-static int htvec_suspend(void *data)
+static int htvec_suspend(void)
 {
 	int i;
 
@@ -169,7 +169,7 @@ static int htvec_suspend(void *data)
 	return 0;
 }
 
-static void htvec_resume(void *data)
+static void htvec_resume(void)
 {
 	int i;
 
@@ -177,13 +177,9 @@ static void htvec_resume(void *data)
 		writel(htvec_priv->saved_vec_en[i], htvec_priv->base + HTVEC_EN_OFF + 4 * i);
 }
 
-static const struct syscore_ops htvec_syscore_ops = {
+static struct syscore_ops htvec_syscore_ops = {
 	.suspend = htvec_suspend,
 	.resume = htvec_resume,
-};
-
-static struct syscore htvec_syscore = {
-	.ops = &htvec_syscore_ops,
 };
 
 static int htvec_init(phys_addr_t addr, unsigned long size,
@@ -218,7 +214,7 @@ static int htvec_init(phys_addr_t addr, unsigned long size,
 
 	htvec_priv = priv;
 
-	register_syscore(&htvec_syscore);
+	register_syscore_ops(&htvec_syscore_ops);
 
 	return 0;
 

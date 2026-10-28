@@ -407,23 +407,19 @@ static struct irq_domain *acpi_get_vec_parent(int node, struct acpi_vector_group
 	return NULL;
 }
 
-static int eiointc_suspend(void *data)
+static int eiointc_suspend(void)
 {
 	return 0;
 }
 
-static void eiointc_resume(void *data)
+static void eiointc_resume(void)
 {
 	eiointc_router_init(0);
 }
 
-static const struct syscore_ops eiointc_syscore_ops = {
+static struct syscore_ops eiointc_syscore_ops = {
 	.suspend = eiointc_suspend,
 	.resume = eiointc_resume,
-};
-
-static struct syscore eiointc_syscore = {
-	.ops = &eiointc_syscore_ops,
 };
 
 static int __init pch_pic_parse_madt(union acpi_subtable_headers *header,
@@ -544,7 +540,7 @@ static int __init eiointc_init(struct eiointc_priv *priv, int parent_irq,
 	eiointc_router_init(0);
 
 	if (nr_pics == 1) {
-		register_syscore(&eiointc_syscore);
+		register_syscore_ops(&eiointc_syscore_ops);
 		cpuhp_setup_state_nocalls(CPUHP_AP_IRQ_EIOINTC_STARTING,
 					  "irqchip/loongarch/eiointc:starting",
 					  eiointc_router_init, NULL);

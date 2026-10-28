@@ -3068,7 +3068,7 @@ static void disable_iommus(void)
  * disable suspend until real resume implemented
  */
 
-static void amd_iommu_resume(void *data)
+static void amd_iommu_resume(void)
 {
 	struct amd_iommu *iommu;
 
@@ -3083,7 +3083,7 @@ static void amd_iommu_resume(void *data)
 	amd_iommu_enable_interrupts();
 }
 
-static int amd_iommu_suspend(void *data)
+static int amd_iommu_suspend(void)
 {
 	/* disable IOMMUs to go out of the way for BIOS */
 	disable_iommus();
@@ -3091,13 +3091,9 @@ static int amd_iommu_suspend(void *data)
 	return 0;
 }
 
-static const struct syscore_ops amd_iommu_syscore_ops = {
+static struct syscore_ops amd_iommu_syscore_ops = {
 	.suspend = amd_iommu_suspend,
 	.resume = amd_iommu_resume,
-};
-
-static struct syscore amd_iommu_syscore = {
-	.ops = &amd_iommu_syscore_ops,
 };
 
 static void __init free_iommu_resources(void)
@@ -3503,7 +3499,7 @@ static int __init state_next(void)
 		init_state = IOMMU_ENABLED;
 		break;
 	case IOMMU_ENABLED:
-		register_syscore(&amd_iommu_syscore);
+		register_syscore_ops(&amd_iommu_syscore_ops);
 		iommu_snp_enable();
 
 		amd_iommu_apply_erratum_snp();
@@ -3621,12 +3617,12 @@ int __init amd_iommu_enable(void)
 
 void amd_iommu_disable(void)
 {
-	amd_iommu_suspend(NULL);
+	amd_iommu_suspend();
 }
 
 int amd_iommu_reenable(int mode)
 {
-	amd_iommu_resume(NULL);
+	amd_iommu_resume();
 
 	return 0;
 }

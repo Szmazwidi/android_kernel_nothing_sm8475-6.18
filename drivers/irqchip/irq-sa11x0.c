@@ -85,7 +85,7 @@ static struct sa1100irq_state {
 	unsigned int	iccr;
 } sa1100irq_state;
 
-static int sa1100irq_suspend(void *data)
+static int sa1100irq_suspend(void)
 {
 	struct sa1100irq_state *st = &sa1100irq_state;
 
@@ -102,7 +102,7 @@ static int sa1100irq_suspend(void *data)
 	return 0;
 }
 
-static void sa1100irq_resume(void *data)
+static void sa1100irq_resume(void)
 {
 	struct sa1100irq_state *st = &sa1100irq_state;
 
@@ -114,18 +114,14 @@ static void sa1100irq_resume(void *data)
 	}
 }
 
-static const struct syscore_ops sa1100irq_syscore_ops = {
+static struct syscore_ops sa1100irq_syscore_ops = {
 	.suspend	= sa1100irq_suspend,
 	.resume		= sa1100irq_resume,
 };
 
-static struct syscore sa1100irq_syscore = {
-	.ops = &sa1100irq_syscore_ops,
-};
-
 static int __init sa1100irq_init_devicefs(void)
 {
-	register_syscore(&sa1100irq_syscore);
+	register_syscore_ops(&sa1100irq_syscore_ops);
 	return 0;
 }
 

@@ -747,7 +747,7 @@ static int __init pxa_gpio_dt_init(void)
 device_initcall(pxa_gpio_dt_init);
 
 #ifdef CONFIG_PM
-static int pxa_gpio_suspend(void *data)
+static int pxa_gpio_suspend(void)
 {
 	struct pxa_gpio_chip *pchip = pxa_gpio_chip;
 	struct pxa_gpio_bank *c;
@@ -768,7 +768,7 @@ static int pxa_gpio_suspend(void *data)
 	return 0;
 }
 
-static void pxa_gpio_resume(void *data)
+static void pxa_gpio_resume(void)
 {
 	struct pxa_gpio_chip *pchip = pxa_gpio_chip;
 	struct pxa_gpio_bank *c;
@@ -792,18 +792,14 @@ static void pxa_gpio_resume(void *data)
 #define pxa_gpio_resume		NULL
 #endif
 
-static const struct syscore_ops pxa_gpio_syscore_ops = {
+static struct syscore_ops pxa_gpio_syscore_ops = {
 	.suspend	= pxa_gpio_suspend,
 	.resume		= pxa_gpio_resume,
 };
 
-static struct syscore pxa_gpio_syscore = {
-	.ops = &pxa_gpio_syscore_ops,
-};
-
 static int __init pxa_gpio_sysinit(void)
 {
-	register_syscore(&pxa_gpio_syscore);
+	register_syscore_ops(&pxa_gpio_syscore_ops);
 	return 0;
 }
 postcore_initcall(pxa_gpio_sysinit);

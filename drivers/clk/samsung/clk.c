@@ -271,7 +271,7 @@ void __init samsung_clk_of_register_fixed_ext(struct samsung_clk_provider *ctx,
 }
 
 #ifdef CONFIG_PM_SLEEP
-static int samsung_clk_suspend(void *data)
+static int samsung_clk_suspend(void)
 {
 	struct samsung_clock_reg_cache *reg_cache;
 
@@ -284,7 +284,7 @@ static int samsung_clk_suspend(void *data)
 	return 0;
 }
 
-static void samsung_clk_resume(void *data)
+static void samsung_clk_resume(void)
 {
 	struct samsung_clock_reg_cache *reg_cache;
 
@@ -293,13 +293,9 @@ static void samsung_clk_resume(void *data)
 				reg_cache->rd_num);
 }
 
-static const struct syscore_ops samsung_clk_syscore_ops = {
+static struct syscore_ops samsung_clk_syscore_ops = {
 	.suspend = samsung_clk_suspend,
 	.resume = samsung_clk_resume,
-};
-
-static struct syscore samsung_clk_syscore = {
-	.ops = &samsung_clk_syscore_ops,
 };
 
 void samsung_clk_extended_sleep_init(void __iomem *reg_base,
@@ -320,7 +316,7 @@ void samsung_clk_extended_sleep_init(void __iomem *reg_base,
 		panic("could not allocate register dump storage.\n");
 
 	if (list_empty(&clock_reg_cache_list))
-		register_syscore(&samsung_clk_syscore);
+		register_syscore_ops(&samsung_clk_syscore_ops);
 
 	reg_cache->reg_base = reg_base;
 	reg_cache->rd_num = nr_rdump;

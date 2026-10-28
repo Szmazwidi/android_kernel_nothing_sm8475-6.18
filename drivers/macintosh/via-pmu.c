@@ -2600,7 +2600,7 @@ void pmu_blink(int n)
 #if defined(CONFIG_SUSPEND) && defined(CONFIG_PPC32)
 int pmu_sys_suspended;
 
-static int pmu_syscore_suspend(void *data)
+static int pmu_syscore_suspend(void)
 {
 	/* Suspend PMU event interrupts */
 	pmu_suspend();
@@ -2614,7 +2614,7 @@ static int pmu_syscore_suspend(void *data)
 	return 0;
 }
 
-static void pmu_syscore_resume(void *data)
+static void pmu_syscore_resume(void)
 {
 	struct adb_request req;
 
@@ -2634,18 +2634,14 @@ static void pmu_syscore_resume(void *data)
 	pmu_sys_suspended = 0;
 }
 
-static const struct syscore_ops pmu_syscore_ops = {
+static struct syscore_ops pmu_syscore_ops = {
 	.suspend = pmu_syscore_suspend,
 	.resume = pmu_syscore_resume,
 };
 
-static struct syscore pmu_syscore = {
-	.ops = &pmu_syscore_ops,
-};
-
 static int pmu_syscore_register(void)
 {
-	register_syscore(&pmu_syscore);
+	register_syscore_ops(&pmu_syscore_ops);
 
 	return 0;
 }

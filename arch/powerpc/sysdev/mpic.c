@@ -1944,7 +1944,7 @@ static void mpic_suspend_one(struct mpic *mpic)
 	}
 }
 
-static int mpic_suspend(void *data)
+static int mpic_suspend(void)
 {
 	struct mpic *mpic = mpics;
 
@@ -1986,7 +1986,7 @@ static void mpic_resume_one(struct mpic *mpic)
 	} /* end for loop */
 }
 
-static void mpic_resume(void *data)
+static void mpic_resume(void)
 {
 	struct mpic *mpic = mpics;
 
@@ -1996,23 +1996,19 @@ static void mpic_resume(void *data)
 	}
 }
 
-static const struct syscore_ops mpic_syscore_ops = {
+static struct syscore_ops mpic_syscore_ops = {
 	.resume = mpic_resume,
 	.suspend = mpic_suspend,
-};
-
-static struct syscore mpic_syscore = {
-	.ops = &mpic_syscore_ops,
 };
 
 static int mpic_init_sys(void)
 {
 	int rc;
 
-	register_syscore(&mpic_syscore);
+	register_syscore_ops(&mpic_syscore_ops);
 	rc = subsys_system_register(&mpic_subsys, NULL);
 	if (rc) {
-		unregister_syscore(&mpic_syscore);
+		unregister_syscore_ops(&mpic_syscore_ops);
 		pr_err("mpic: Failed to register subsystem!\n");
 		return rc;
 	}
