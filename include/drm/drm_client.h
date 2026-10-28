@@ -174,6 +174,11 @@ struct drm_client_buffer {
 	struct drm_client_dev *client;
 
 	/**
+	 * @pitch: Buffer pitch
+	 */
+	u32 pitch;
+
+	/**
 	 * @gem: GEM object backing this buffer
 	 *
 	 * FIXME: The dependency on GEM here isn't required, we could
