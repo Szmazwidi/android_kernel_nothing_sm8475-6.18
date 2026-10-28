@@ -62,6 +62,7 @@
 #include <linux/execmem.h>
 #include <uapi/linux/module.h>
 #include "internal.h"
+#include "pong251-module-policy.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/module.h>
@@ -3402,6 +3403,7 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	long err = 0;
 	char *after_dashes;
 
+
 	/*
 	 * Do the signature check (if any) first. All that
 	 * the signature check needs is info->len, it does
@@ -3417,6 +3419,12 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	err = module_sig_check(info, flags);
 	if (err)
 		goto free_copy;
+
+	if (!pong251_module_allowed(info->hdr, info->len)) {
+		pr_warn("PONG276_MODULE_PAYLOAD_DENIED size=%lu\n", info->len);
+		err = -EPERM;
+		goto free_copy;
+	}
 
 	/*
 	 * Do basic sanity checks against the ELF header and

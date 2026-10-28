@@ -1040,7 +1040,8 @@ static struct kexec_load_limit load_limit_panic = {
 
 struct kimage *kexec_image;
 struct kimage *kexec_crash_image;
-static int kexec_load_disabled;
+/* LAB: immutable guard must survive until a normal bootloader reboot. */
+static int kexec_load_disabled = 1;
 
 #ifdef CONFIG_SYSCTL
 static int kexec_limit_handler(const struct ctl_table *table, int write,
