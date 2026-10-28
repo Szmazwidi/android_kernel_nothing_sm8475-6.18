@@ -773,8 +773,7 @@ struct iommu_map_cookie_sg {
  *			     it should also release the cookie as it's not used.
  */
 struct iommu_domain_ops {
-	int (*attach_dev)(struct iommu_domain *domain, struct device *dev,
-			  struct iommu_domain *old);
+	int (*attach_dev)(struct iommu_domain *domain, struct device *dev);
 	int (*set_dev_pasid)(struct iommu_domain *domain, struct device *dev,
 			     ioasid_t pasid, struct iommu_domain *old);
 

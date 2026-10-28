@@ -771,8 +771,7 @@ static void sun50i_iommu_detach_domain(struct sun50i_iommu *iommu,
 }
 
 static int sun50i_iommu_identity_attach(struct iommu_domain *identity_domain,
-					struct device *dev,
-					struct iommu_domain *old)
+					struct device *dev)
 {
 	struct sun50i_iommu *iommu = dev_iommu_priv_get(dev);
 	struct sun50i_iommu_domain *sun50i_domain;
@@ -798,8 +797,7 @@ static struct iommu_domain sun50i_iommu_identity_domain = {
 };
 
 static int sun50i_iommu_attach_device(struct iommu_domain *domain,
-				      struct device *dev,
-				      struct iommu_domain *old)
+				      struct device *dev)
 {
 	struct sun50i_iommu_domain *sun50i_domain = to_sun50i_domain(domain);
 	struct sun50i_iommu *iommu;
@@ -815,7 +813,7 @@ static int sun50i_iommu_attach_device(struct iommu_domain *domain,
 	if (iommu->domain == domain)
 		return 0;
 
-	sun50i_iommu_identity_attach(&sun50i_iommu_identity_domain, dev, old);
+	sun50i_iommu_identity_attach(&sun50i_iommu_identity_domain, dev);
 
 	sun50i_iommu_attach_domain(iommu, sun50i_domain);
 

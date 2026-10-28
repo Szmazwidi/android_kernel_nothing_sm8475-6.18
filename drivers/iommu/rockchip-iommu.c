@@ -968,8 +968,7 @@ out_disable_clocks:
 }
 
 static int rk_iommu_identity_attach(struct iommu_domain *identity_domain,
-				    struct device *dev,
-				    struct iommu_domain *old)
+				    struct device *dev)
 {
 	struct rk_iommu *iommu;
 	struct rk_iommu_domain *rk_domain;
@@ -1014,7 +1013,7 @@ static struct iommu_domain rk_identity_domain = {
 };
 
 static int rk_iommu_attach_device(struct iommu_domain *domain,
-				  struct device *dev, struct iommu_domain *old)
+		struct device *dev)
 {
 	struct rk_iommu *iommu;
 	struct rk_iommu_domain *rk_domain = to_rk_domain(domain);
@@ -1035,7 +1034,7 @@ static int rk_iommu_attach_device(struct iommu_domain *domain,
 	if (iommu->domain == domain)
 		return 0;
 
-	ret = rk_iommu_identity_attach(&rk_identity_domain, dev, old);
+	ret = rk_iommu_identity_attach(&rk_identity_domain, dev);
 	if (ret)
 		return ret;
 
@@ -1050,17 +1049,8 @@ static int rk_iommu_attach_device(struct iommu_domain *domain,
 		return 0;
 
 	ret = rk_iommu_enable(iommu);
-	if (ret) {
-		/*
-		 * Note rk_iommu_identity_attach() might fail before physically
-		 * attaching the dev to iommu->domain, in which case the actual
-		 * old domain for this revert should be rk_identity_domain v.s.
-		 * iommu->domain. Since rk_iommu_identity_attach() does not care
-		 * about the old domain argument for now, this is not a problem.
-		 */
-		WARN_ON(rk_iommu_identity_attach(&rk_identity_domain, dev,
-						 iommu->domain));
-	}
+	if (ret)
+		WARN_ON(rk_iommu_identity_attach(&rk_identity_domain, dev));
 
 	pm_runtime_put(iommu->dev);
 
