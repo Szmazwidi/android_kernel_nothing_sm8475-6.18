@@ -909,9 +909,7 @@ struct compact_control {
  * immediately when one is created during the free path.
  */
 struct capture_control {
-	struct zone *zone;
-	int migratetype;
-	int order;
+	struct compact_control *cc;
 	struct page *page;
 };
 
