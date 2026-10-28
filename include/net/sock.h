@@ -305,8 +305,6 @@ struct sk_filter;
   *	@sk_txrehash: enable TX hash rethink
   *	@sk_filter: socket filtering instructions
   *	@sk_timer: sock cleanup timer
-  *	@tcp_retransmit_timer: tcp retransmit timer
-  *	@mptcp_retransmit_timer: mptcp retransmit timer
   *	@sk_stamp: time stamp of last packet received
   *	@sk_stamp_seq: lock for accessing sk_stamp on 32 bit architectures only
   *	@sk_tsflags: SO_TIMESTAMPING flags
@@ -484,11 +482,8 @@ struct sock {
 	u32			sk_dst_pending_confirm;
 	u32			sk_pacing_status; /* see enum sk_pacing */
 	struct page_frag	sk_frag;
-	union {
-		struct timer_list	sk_timer;
-		struct timer_list	tcp_retransmit_timer;
-		struct timer_list	mptcp_retransmit_timer;
-	};
+	struct timer_list	sk_timer;
+
 	unsigned long		sk_pacing_rate; /* bytes per second */
 	atomic_t		sk_zckey;
 	atomic_t		sk_tskey;
