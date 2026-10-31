@@ -54,6 +54,40 @@ static unsigned int bsg_timeout(struct bsg_device *bd, struct sg_io_v4 *hdr)
 	return max_t(unsigned int, timeout, BLK_MIN_SG_TIMEOUT);
 }
 
+/*
+ * PONG CLS20: the only passthrough allowed is the UFS RPMB well-known LUN (0xC144). QSEE secure storage
+ * (qseecomd rpmb_ufs, used by Gatekeeper/KeyMint) needs it; RPMB frames are authenticated by the TZ key and
+ * cannot reach the partitions guarded by PONG248. Every other bsg node stays closed.
+ */
+static bool pong_bsg_rpmb(struct bsg_device *bd)
+{
+	return !strcmp(dev_name(&bd->device), "0:0:0:49476");
+}
+
+/* PONG CLS21: UFS transport node; only read-only standard query requests (see pong_bsg_ufs_query_ok) */
+static bool pong_bsg_ufs(struct bsg_device *bd)
+{
+	return !strcmp(dev_name(&bd->device), "ufs-bsg0");
+}
+
+static bool pong_bsg_ufs_query_ok(const struct sg_io_v4 *hdr)
+{
+	u8 req[20];
+	u32 msgcode;
+
+	/* struct ufs_bsg_request: msgcode, utp_upiu_header (12 bytes), utp_upiu_query (opcode first) */
+	if (hdr->request_len < sizeof(req) ||
+	    copy_from_user(req, (void __user *)(uintptr_t)hdr->request, sizeof(req)))
+		return false;
+	memcpy(&msgcode, req, sizeof(msgcode));
+	if (msgcode != 0x16)		/* UPIU_TRANSACTION_QUERY_REQ */
+		return false;
+	if (req[4 + 5] != 0x01)		/* header.query_function: standard read request */
+		return false;
+	/* query opcode: READ_DESC, READ_ATTR, READ_FLAG */
+	return req[16] == 0x01 || req[16] == 0x03 || req[16] == 0x05;
+}
+
 static int bsg_sg_io(struct bsg_device *bd, bool open_for_write,
 		     void __user *uarg)
 {
@@ -64,6 +98,22 @@ static int bsg_sg_io(struct bsg_device *bd, bool open_for_write,
 		return -EFAULT;
 	if (hdr.guard != 'Q')
 		return -EINVAL;
+	/* PONG CLS20: RPMB LUN only, security protocol and harmless status commands */
+	{
+		u8 op;
+
+		if (pong_bsg_ufs(bd)) {
+			if (!pong_bsg_ufs_query_ok(&hdr))
+				return -EPERM;
+			goto pong_allowed;
+		}
+		if (!pong_bsg_rpmb(bd) || hdr.request_len < 1 ||
+		    get_user(op, (u8 __user *)(uintptr_t)hdr.request))
+			return -EPERM;
+		if (op != 0xa2 && op != 0xb5 && op != 0x00 && op != 0x03 && op != 0x12)
+			return -EPERM;
+	}
+pong_allowed:
 	ret = bd->sg_io_fn(bd->queue, &hdr, open_for_write,
 			   bsg_timeout(bd, &hdr));
 	if (!ret && copy_to_user(uarg, &hdr, sizeof(hdr)))
@@ -74,7 +124,11 @@ static int bsg_sg_io(struct bsg_device *bd, bool open_for_write,
 static int bsg_open(struct inode *inode, struct file *file)
 {
 	/* LAB: userspace UFS/BSG passthrough bypasses physical BIO checks. */
-	return -EPERM;
+	if (!pong_bsg_rpmb(to_bsg_device(inode)) && !pong_bsg_ufs(to_bsg_device(inode)))
+		return -EPERM;
+	if (!blk_get_queue(to_bsg_device(inode)->queue))
+		return -ENXIO;
+	return 0;
 }
 
 static int bsg_release(struct inode *inode, struct file *file)

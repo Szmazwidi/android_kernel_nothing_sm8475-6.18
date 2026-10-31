@@ -1247,7 +1247,14 @@ static inline void blk_flush_plug(struct blk_plug *plug, bool async)
 static __always_inline void blk_plug_invalidate_ts(void)
 {
 	if (unlikely(current->flags & PF_BLOCK_TS)) {
-		current->plug->cur_ktime = 0;
+		struct blk_plug *plug = current->plug;
+
+		/* A completed plug can be NULL when returning from preemption.
+		 * Retain Android's NULL-safe invalidation and always clear the
+		 * stale flag; keep U59's post-context-switch invalidation point.
+		 */
+		if (plug)
+			plug->cur_ktime = 0;
 		current->flags &= ~PF_BLOCK_TS;
 	}
 }
