@@ -95,6 +95,7 @@ static int fw_load_sysfs_fallback(struct fw_sysfs *fw_sysfs, long timeout)
 		retval = -EINTR;
 		goto out;
 	}
+
 	/*
 	 * device_add() exposes the loading interface before pending_list is
 	 * linked into pending_fw_head, so fw_state_done() may run first.

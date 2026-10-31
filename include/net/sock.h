@@ -1830,6 +1830,7 @@ struct sk_buff *sock_omalloc(struct sock *sk, unsigned long size,
 			     gfp_t priority);
 void skb_orphan_partial(struct sk_buff *skb);
 void sock_rfree(struct sk_buff *skb);
+void sock_rmem_free(struct sk_buff *skb);
 void sock_efree(struct sk_buff *skb);
 #ifdef CONFIG_INET
 void sock_edemux(struct sk_buff *skb);
@@ -2265,6 +2266,8 @@ static inline void sk_gso_disable(struct sock *sk)
 	sk->sk_gso_disabled = 1;
 	sk->sk_route_caps &= ~NETIF_F_GSO_MASK;
 }
+
+bool sk_has_decrypt_user(const struct sock *sk);
 
 static inline int skb_do_copy_data_nocache(struct sock *sk, struct sk_buff *skb,
 					   struct iov_iter *from, char *to,
