@@ -1,16 +1,26 @@
-# Nothing Phone (2) — android17-6.18 kernel (`pong-a17-6.18.59`)
+# Nothing Phone (2) — Android 17 / Linux 6.18.60 source candidate
 
-This branch is the Android Common Kernel **android17-6.18** at
-`926a323dc2667901ddcf1d5b024b82eb00aa89cc` (tag `android17-6.18-2026-09_r5`, Linux 6.18.32)
-with upstream stable **v6.18.59** merged on top (`742abc01a97d`, full stable history kept),
-four reverts that keep the KMI of the r5 tag unchanged for vendor modules, and the
-`pong:` commits for the development phone. It uses the ACK `gki_defconfig` with explicit module-signature enforcement
-(`//common:kernel_aarch64`). The older `pong-a17-6.18.32` branch is the same work on the
-plain r5 tag.
+This branch extends the verified `pong-a17-6.18.59` source release with the
+signed upstream v6.18.60 tag, commit
+`f45ed76d6791cf72ff1265ee93511175bbbc2f18` (113 original stable commits).
+Greg Kroah-Hartman's tag signature was checked against the fingerprint
+published by kernel.org. ACK/stable history and existing Pong KMI exceptions
+remain intact. The eventfs merge retains U59 revert `f0b01f206504`: the new
+unlock patch modifies a barrier block absent from that compatibility variant.
+
+The complete 178 vendor + 84 GKI source build, final frozen ABI check,
+SHA-256 signing and diskless default-enforcement positive/negative VM tests
+passed. **This new Image has not been flashed.** The phone and complete-ROM
+recipe still use the separate CLS38 / 6.18.59 reference. Remote defaults stay
+on the verified 6.18.59 branch pending hardware qualification.
+
+The kernel starts from ACK `android17-6.18-2026-09_r5` plus the preserved U59
+stable integration and Pong device changes. A version string is not a claim
+that every unmodified mainline feature or patch is present.
 
 The vendor modules for the phone are in
 [android_kernel_nothing_sm8475-modules-6.18](https://github.com/Szmazwidi/android_kernel_nothing_sm8475-modules-6.18),
-branch `pong-a17-6.18.59`. Its README has the pinned repo manifest and the build steps for both.
+branch `pong-a17-6.18.60`. Its README has the pinned repo manifest and the build steps for both.
 
 ## The `pong: LAB:` commits
 
@@ -74,7 +84,7 @@ tools/bazel run //common:kernel_aarch64_dist -- --destdir=out/kernel
 ```
 
 Without `--config=stamp` the kernel release is
-`6.18.59-android17-5-maybe-dirty-4k`. A fresh build generates its own signing key;
+`6.18.60-android17-5-maybe-dirty-4k`. A fresh build generates its own signing key;
 the phone's private key is not published. The newly verified Image and module
 bank are source-build evidence, not byte-identical replacements for CLS38.
 Use the complete two-pass instructions in the modules repository before
