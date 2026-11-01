@@ -4,7 +4,7 @@ This branch is the Android Common Kernel **android17-6.18** at
 `926a323dc2667901ddcf1d5b024b82eb00aa89cc` (tag `android17-6.18-2026-09_r5`, Linux 6.18.32)
 with upstream stable **v6.18.59** merged on top (`742abc01a97d`, full stable history kept),
 four reverts that keep the KMI of the r5 tag unchanged for vendor modules, and the
-`pong:` commits for the development phone. It is built with the unchanged `gki_defconfig`
+`pong:` commits for the development phone. It uses the ACK `gki_defconfig` with explicit module-signature enforcement
 (`//common:kernel_aarch64`). The older `pong-a17-6.18.32` branch is the same work on the
 plain r5 tag.
 
@@ -35,16 +35,35 @@ Consequences:
   unless their payloads are in the list. Even a rebuild from the same sources differs in
   `.BTF`, because module BTF depends on `vmlinux`.
 
-To use the tree as a base for your own kernel, revert them:
+Identify the guard commits separately from the device-support commits:
 
 ```sh
 git log --oneline --first-parent 926a323dc266..HEAD   # list the pong: commits
-git revert --no-edit <each pong: commit, newest first>
+# Review only the specific LAB guard commits for your hardware geometry.
 ```
 
-Or keep them: regenerate the module list from the modules you ship with
+Do not revert every `pong:` commit: that also removes port support. Keep the guards
+for this development phone; for other hardware, review partition geometry first.
+Regenerate the module list from the modules you ship with
 `tools/gen-module-policy.py` from the modules repository, rebuild the kernel, and re-sign the
 modules with its key. The modules repository README has the exact steps.
+
+## Module signing and source verification
+
+Standalone source builds now select `CONFIG_MODULE_SIG_FORCE=y` and SHA-256,
+with automatic GKI signing retained. BoringSSL's PKCS#7 API emits RSA/SHA-256;
+the sign-file compatibility check now accepts that correctly and retains the
+legacy Android build-utils argument as an explicit SHA-256 alias. The old
+OpenSSL fallback and all KMI checks remain in place. Raw-signature mode does
+not dereference an absent hash argument. See the
+[BoringSSL API contract](https://boringssl.googlesource.com/boringssl/+/89386ac89bef26888b8d866ebb98b696d82dfde8/include/openssl/pkcs7.h).
+
+The source/ABI check covers all 262 selected modules. The fresh two-pass bank
+has verified SHA-256 signatures, and a diskless VM checks default enforcement,
+valid module admission, and rejection of unsigned, unknown-key, damaged and
+changed-payload modules. These are host results, separate from the historical
+CLS38 hardware Image, whose signature-force parameter was off while its exact
+payload gate was active. Fresh locally keyed images have not been flashed.
 
 ## Building
 
@@ -54,11 +73,12 @@ Inside the Kleaf workspace described in the modules repository:
 tools/bazel run //common:kernel_aarch64_dist -- --destdir=out/kernel
 ```
 
-Without `--config=stamp` the kernel release is `6.18.59-android17-5-maybe-dirty-4k`, the same
-as on the development phone, with the same toolchain banner. A fresh build of this branch has
-the same size as the phone's `Image` but is not byte-identical: Kleaf generates a new module
-signing key in every fresh output directory (the phone's key is not published), and other
-build-local differences were not analysed. Modules you build must be signed with your own key.
+Without `--config=stamp` the kernel release is
+`6.18.59-android17-5-maybe-dirty-4k`. A fresh build generates its own signing key;
+the phone's private key is not published. The newly verified Image and module
+bank are source-build evidence, not byte-identical replacements for CLS38.
+Use the complete two-pass instructions in the modules repository before
+packaging new modules with their matching Image and key.
 
 ## Authorship
 

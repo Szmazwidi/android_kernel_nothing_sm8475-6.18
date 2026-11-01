@@ -220,7 +220,7 @@ static X509 *read_x509(const char *x509_name)
 int main(int argc, char **argv)
 {
 	struct module_signature sig_info = { .id_type = PKEY_ID_PKCS7 };
-	char *hash_algo = NULL;
+	const char *hash_algo = NULL;
 	char *private_key_name = NULL, *raw_sig_name = NULL;
 	char *x509_name, *module_name, *dest_name;
 	bool save_sig = false, replace_orig;
@@ -236,6 +236,12 @@ int main(int argc, char **argv)
 	unsigned int use_keyid = 0;
 #else
 	PKCS7 *pkcs7 = NULL;
+#ifdef OPENSSL_IS_BORINGSSL
+	/* BoringSSL's restricted PKCS7_sign() always uses RSA with SHA-256. */
+	const char *pkcs7_digest = "sha256";
+#else
+	const char *pkcs7_digest = "sha1";
+#endif
 #endif
 	X509 *x509;
 	BIO *bd, *bm;
@@ -290,10 +296,19 @@ int main(int argc, char **argv)
 	}
 
 #ifdef USE_PKCS7
-	if (strcmp(hash_algo, "sha1") != 0) {
-		fprintf(stderr, "sign-file: %s only supports SHA1 signing\n",
-			OPENSSL_VERSION_TEXT);
-		exit(3);
+	if (!raw_sig) {
+#ifdef OPENSSL_IS_BORINGSSL
+		/* Retain the argument used by older Android build_utils.sh. */
+		if (strcmp(hash_algo, "sha1") == 0) {
+			fprintf(stderr, "sign-file: BoringSSL legacy sha1 argument maps to SHA256\n");
+			hash_algo = "sha256";
+		}
+#endif
+		if (strcmp(hash_algo, pkcs7_digest) != 0) {
+			fprintf(stderr, "sign-file: %s PKCS#7 mode only supports %s signing\n",
+				OPENSSL_VERSION_TEXT, pkcs7_digest);
+			exit(3);
+		}
 	}
 #endif
 
