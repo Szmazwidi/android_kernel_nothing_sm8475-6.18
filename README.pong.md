@@ -14,11 +14,17 @@ passed. **The first native hardware test did not complete Android boot.**
 The vendor source recipe had selected the rejected heap974 diagnostic exporter,
 which lacked the qcom,system name and userspace mmap. The exact CLS38 / 6.18.59
 images were restored with personal data and normal checkpoint state verified.
-The companion modules branch corrects the selection to the accepted heap982
-source and adds runtime-interface checks. A full rebuild, final payload-policy
-admission, signatures/VM tests and new hardware qualification are required.
-Remote defaults and the complete-ROM recipe remain on the verified 6.18.59
-reference; the failed 6.18.60 host artifacts are retained as historical evidence.
+The companion modules branch subsequently selected heap982, and a complete
+source-built 6.18.60 cohort booted the development phone with Android, root,
+SELinux enforcing and forced module signatures. Camera CPU access still failed
+with EPERM. A later recipe selects the stage1063 heap, matching the working
+CLS38 implementation and preserving its permission-ownership checks. A full
+262-module rebuild, frozen payload policy, signatures, ABI and admission VM
+tests passed for that cohort. It also booted the development phone with data
+preserved; mobile data and NDK camera preview/JPEG probes passed. Further
+device tests and the open warnings/crashes are recorded in the modules
+repository. Remote defaults and the complete-ROM
+recipe remain on the 6.18.59 reference unless explicitly updated.
 
 The kernel starts from ACK `android17-6.18-2026-09_r5` plus the preserved U59
 stable integration and Pong device changes. A version string is not a claim
@@ -79,7 +85,11 @@ has verified SHA-256 signatures, and a diskless VM checks default enforcement,
 valid module admission, and rejection of unsigned, unknown-key, damaged and
 changed-payload modules. These are host results, separate from the historical
 CLS38 hardware Image, whose signature-force parameter was off while its exact
-payload gate was active. Fresh locally keyed images have not been flashed.
+payload gate was active. A fresh locally keyed 6.18.60 cohort booted Android
+on the development phone; that boot alone does not establish camera or other
+hardware functionality. The subsequent stage1063 heap cohort is a separate
+build whose limited camera and mobile results are documented by the modules
+repository; other devices and features still require qualification.
 
 ## Building
 
