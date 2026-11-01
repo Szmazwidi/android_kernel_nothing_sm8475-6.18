@@ -10,9 +10,15 @@ unlock patch modifies a barrier block absent from that compatibility variant.
 
 The complete 178 vendor + 84 GKI source build, final frozen ABI check,
 SHA-256 signing and diskless default-enforcement positive/negative VM tests
-passed. **This new Image has not been flashed.** The phone and complete-ROM
-recipe still use the separate CLS38 / 6.18.59 reference. Remote defaults stay
-on the verified 6.18.59 branch pending hardware qualification.
+passed. **The first native hardware test did not complete Android boot.**
+The vendor source recipe had selected the rejected heap974 diagnostic exporter,
+which lacked the qcom,system name and userspace mmap. The exact CLS38 / 6.18.59
+images were restored with personal data and normal checkpoint state verified.
+The companion modules branch corrects the selection to the accepted heap982
+source and adds runtime-interface checks. A full rebuild, final payload-policy
+admission, signatures/VM tests and new hardware qualification are required.
+Remote defaults and the complete-ROM recipe remain on the verified 6.18.59
+reference; the failed 6.18.60 host artifacts are retained as historical evidence.
 
 The kernel starts from ACK `android17-6.18-2026-09_r5` plus the preserved U59
 stable integration and Pong device changes. A version string is not a claim
