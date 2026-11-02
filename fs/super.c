@@ -1682,6 +1682,7 @@ EXPORT_SYMBOL_GPL(setup_bdev_super);
 /* LAB: normal fstab may request RW persist/qmcs. Mount protected physical
  * partitions RO instead of letting their journal replay hit the BIO guard.
  * The BIO guard still enforces writes through arbitrary DM/raw aliases. */
+#ifdef CONFIG_PONG_LAB_GUARDS
 #include "../block/pong248-range.h"
 #include <linux/pong309-ufs.h>
 static int pong251_mount_policy(struct fs_context *fc, dev_t dev)
@@ -1712,6 +1713,12 @@ static int pong251_mount_policy(struct fs_context *fc, dev_t dev)
     bdev_fput(file);
     return 0;
 }
+#else /* !CONFIG_PONG_LAB_GUARDS */
+static inline int pong251_mount_policy(struct fs_context *fc, dev_t dev)
+{
+    return 0;
+}
+#endif /* CONFIG_PONG_LAB_GUARDS */
 
 int get_tree_bdev_flags(struct fs_context *fc,
 		int (*fill_super)(struct super_block *sb,

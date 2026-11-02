@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+#ifdef CONFIG_PONG_LAB_GUARDS
 /* Immutable LAB allowlist: after stacked-device remapping, every physical BIO
  * is checked again. Neither device-node aliases nor a raw-LUN DM mapping can
  * turn a protected sector into an authorized data sector. No runtime switch.
@@ -46,3 +47,9 @@ static int __init pong248_guard_init(void)
     return 0;
 }
 early_initcall(pong248_guard_init);
+#else /* !CONFIG_PONG_LAB_GUARDS */
+static inline bool pong248_bio_allowed(struct bio *bio)
+{
+    return true;
+}
+#endif /* CONFIG_PONG_LAB_GUARDS */

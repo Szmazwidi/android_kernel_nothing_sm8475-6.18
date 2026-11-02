@@ -49,7 +49,23 @@ support and they must not be used on any other phone as they are.
 | `pong: retain CLS20/21 scoped RPMB and UFS read-query access` | Narrow exception to the BSG lock: only the RPMB W-LUN with the RPMB opcodes (needed by qseecomd, otherwise Gatekeeper cannot enroll a lock screen) and read-only UFS QUERY descriptors/attributes/flags on `/dev/ufs-bsg0`. |
 | `pong: retain admitted module payload history through CLS…` | Payload hashes of the modules admitted in later development stages. |
 
-Consequences:
+Since stage CLG1 all of the above are compiled only with `CONFIG_PONG_LAB_GUARDS=y`
+(`block/Kconfig`, default **off**). The laboratory profile enables it through the
+defconfig fragment `arch/arm64/configs/pong_lab.fragment`:
+
+```sh
+# laboratory kernel for the development phone (guards on)
+tools/bazel run --defconfig_fragment=//common:pong_lab_defconfig //common:kernel_aarch64_dist -- --destdir=out/kernel-lab
+# default / release kernel (guards compiled out, plain upstream behaviour)
+tools/bazel run //common:kernel_aarch64_dist -- --destdir=out/kernel
+```
+
+With the option off the BIO/mount hooks become empty inline stubs, `bsg_open()`, SG_IO and the
+SCSI ioctls behave as upstream, `kexec_load` is not pre-disabled and the module loader relies on
+signature enforcement only (`CONFIG_MODULE_SIG_FORCE=y` stays in `gki_defconfig`). The payload
+list `kernel/module/pong251-module-policy.h` is compiled only in the laboratory profile.
+
+Consequences (laboratory profile):
 
 * On another phone (different UFS size or partition layout) the block guard rejects writes
   that Android needs.

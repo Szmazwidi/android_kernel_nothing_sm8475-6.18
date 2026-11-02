@@ -3606,3 +3606,12 @@ pkg_zip(
 exports_files([
     "Makefile",
 ])
+
+# Nothing Phone (2) "Pong" laboratory profile: enables CONFIG_PONG_LAB_GUARDS
+# (PONG248 write guard, PONG251 mount/module policy, bsg lock). Default builds
+# leave it off. Use: --defconfig_fragment=//common:pong_lab_defconfig
+filegroup(
+    name = "pong_lab_defconfig",
+    srcs = ["arch/arm64/configs/pong_lab.fragment"],
+    visibility = ["//visibility:public"],
+)

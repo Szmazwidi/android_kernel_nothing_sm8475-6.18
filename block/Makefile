@@ -38,4 +38,4 @@ obj-$(CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK)	+= blk-crypto-fallback.o
 obj-$(CONFIG_BLOCK_HOLDER_DEPRECATED)	+= holder.o
 
 # Private, unexported UFS identity used by immutable physical-range guard.
-obj-y += pong309-ufs.o
+obj-$(CONFIG_PONG_LAB_GUARDS) += pong309-ufs.o

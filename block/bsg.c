@@ -99,7 +99,7 @@ static int bsg_sg_io(struct bsg_device *bd, bool open_for_write,
 	if (hdr.guard != 'Q')
 		return -EINVAL;
 	/* PONG CLS20: RPMB LUN only, security protocol and harmless status commands */
-	{
+	if (IS_ENABLED(CONFIG_PONG_LAB_GUARDS)) {
 		u8 op;
 
 		if (pong_bsg_ufs(bd)) {
@@ -124,7 +124,8 @@ pong_allowed:
 static int bsg_open(struct inode *inode, struct file *file)
 {
 	/* LAB: userspace UFS/BSG passthrough bypasses physical BIO checks. */
-	if (!pong_bsg_rpmb(to_bsg_device(inode)) && !pong_bsg_ufs(to_bsg_device(inode)))
+	if (IS_ENABLED(CONFIG_PONG_LAB_GUARDS) &&
+	    !pong_bsg_rpmb(to_bsg_device(inode)) && !pong_bsg_ufs(to_bsg_device(inode)))
 		return -EPERM;
 	if (!blk_get_queue(to_bsg_device(inode)->queue))
 		return -ENXIO;

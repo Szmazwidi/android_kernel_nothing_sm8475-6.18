@@ -221,6 +221,41 @@ config BLOCK_HOLDER_DEPRECATED
 config BLK_MQ_STACKING
 	bool
 
+config PONG_LAB_GUARDS
+	bool "Nothing Phone (2) laboratory storage and module guards"
+	depends on SCSI=y
+	select CRYPTO_LIB_SHA256
+	help
+	  Laboratory-only protections used while porting the Nothing Phone (2)
+	  ("Pong") to this kernel. They are tied to one specific device and
+	  storage size and must stay disabled in normal and release builds.
+
+	  When enabled:
+	   - PONG248: every physical write, discard or zeroing BIO on a
+	     non-stacked block device is rejected unless it targets the
+	     metadata/userdata ranges or the first 4 KiB of misc on UFS LUN 0
+	     with a capacity of exactly 487079936 sectors (256 GB model).
+	     Every other LUN and partition (EFS/modemst/fsg, persist, frp,
+	     super, keystore, Virtual A/B state in misc, ...) becomes
+	     read-only, and any other UFS size blocks /data and /metadata.
+	   - PONG251 mount policy: filesystems on protected physical ranges
+	     are forced read-only at mount time.
+	   - Passthrough lock: bsg_open() is refused except for the UFS RPMB
+	     well-known LUN (limited opcodes) and read-only UFS query requests
+	     on ufs-bsg0; SG_IO, SG_SCSI_RESET and the SCSI command ioctls on
+	     SCSI block devices return -EPERM.
+	   - kexec_load is disabled from boot, so the guards stay in place
+	     until a normal bootloader reboot.
+	   - PONG251/276 module payload list: in addition to signature
+	     verification, only module ELF payloads whose SHA-256 is listed
+	     in kernel/module/pong251-module-policy.h may be loaded.
+
+	  Enabled only by the laboratory profile, i.e. Kleaf
+	  --defconfig_fragment=//common:pong_lab_defconfig
+	  (arch/arm64/configs/pong_lab.fragment).
+
+	  If unsure, say N.
+
 source "block/Kconfig.iosched"
 
 endif # BLOCK

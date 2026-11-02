@@ -62,7 +62,15 @@
 #include <linux/execmem.h>
 #include <uapi/linux/module.h>
 #include "internal.h"
+#ifdef CONFIG_PONG_LAB_GUARDS
+/* LAB: exact admitted module payload list (generated, see prepare-modules.py). */
 #include "pong251-module-policy.h"
+#else
+static inline bool pong251_module_allowed(const void *data, unsigned long bytes)
+{
+	return true;
+}
+#endif
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/module.h>

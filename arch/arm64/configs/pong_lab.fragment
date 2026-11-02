@@ -1,0 +1,5 @@
+# Nothing Phone (2) "Pong" laboratory profile.
+# Applied on top of gki_defconfig with:
+#   tools/bazel run --defconfig_fragment=//common:pong_lab_defconfig //common:kernel_aarch64_dist
+# Release/community builds omit the flag, leaving CONFIG_PONG_LAB_GUARDS unset.
+CONFIG_PONG_LAB_GUARDS=y
