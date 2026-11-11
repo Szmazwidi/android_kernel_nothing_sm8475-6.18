@@ -49,6 +49,7 @@ jobs:
         env:
           PONG_61863_BASE_REF: pong-a17-6.18.60
           PONG_61863_INTEGRATION_BRANCH: pong-a17-6.18.63-integration
+          PONG_61863_REVIEWED_RESOLVE: "1"
         run: |
           set -Eeuo pipefail
           bash tools/pong618-sync-stable-6.18.63.sh
