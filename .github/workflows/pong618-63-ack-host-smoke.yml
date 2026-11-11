@@ -14,7 +14,7 @@ on:
 
 concurrency:
   group: pong-61863-ack-arm64-host-smoke
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   arm64-smoke:
@@ -24,13 +24,13 @@ jobs:
     permissions:
       contents: read
     env:
-      EXPECTED_KERNEL_SHA: c7951557f747d4afedb6b174f71afad3705a1579
+      EXPECTED_KERNEL_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       EXPECTED_UPSTREAM_SHA: 1cdda838e8475edf89b73ff0cc952005dd0b1fa7
     steps:
       - name: Checkout exact source-only integrated kernel commit
         uses: actions/checkout@v4
         with:
-          ref: c7951557f747d4afedb6b174f71afad3705a1579
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -54,6 +54,31 @@ jobs:
           test -f arch/arm64/configs/gki_defconfig
           test -f arch/arm64/configs/pong_lab.fragment
           grep -q '^CONFIG_MODULE_SIG_FORCE=y' arch/arm64/configs/gki_defconfig
+
+      - name: Fail closed on known Android/Pong API regressions
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=lambda p: Path(p).read_text()
+          io=src("io_uring/io_uring.c")
+          assert "io_queue_iowq_foreign_tw" not in io
+          assert "tw.cancel" not in io
+          assert "XA_FLAGS_ALLOC1 | XA_FLAGS_ACCOUNT" in io
+          hdr=src("include/linux/io_uring_types.h")
+          assert "struct io_tw_req {" not in hdr
+          xh=src("drivers/usb/host/xhci.h")
+          anchor=xh[xh.index("struct xhci_port {"):xh.index("};",xh.index("struct xhci_port {"))]
+          assert anchor.index("lpm_incapable:1") < anchor.index("link_inactive:1")
+          assert "rc_free_device(dev->rdev)" not in src("drivers/media/rc/ene_ir.c")
+          sched=src("kernel/sched/ext.c")
+          assert "scx_disable(sch, SCX_EXIT_UNREG)" not in sched
+          assert "scx_disable(SCX_EXIT_UNREG)" in sched
+          assert "pub fn new_inline() -> Self" in src("rust/kernel/bitmap.rs")
+          assert "pub fn find_unused_id(" in src("rust/kernel/id_pool.rs")
+          print("HOST_VERIFIED_STATIC_PONG_REGRESSION_GATES=PASS")
+          PY
 
       - name: Install build prerequisites (host smoke only)
         shell: bash
