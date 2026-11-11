@@ -72,8 +72,8 @@ def resolve(data, ours, theirs, count, policy):
         if final.count(old) != 2:
             fatal("Unexpected backing-file Android API layout")
         final = final.replace(old, new, 1)
-        if "user_file" in final:
-            fatal("Unresolved upstream user_file API leaked into Android path-based ABI")
+        if "file_user_path(user_file)" in final or "alloc_empty_backing_file(flags, cred, user_file)" in final:
+            fatal("Upstream backing_file user_file API leaked into Android path-based ABI")
     else:
         if policy == "stable-hunks":
             changes = [h.group(2) for h in hunks]
