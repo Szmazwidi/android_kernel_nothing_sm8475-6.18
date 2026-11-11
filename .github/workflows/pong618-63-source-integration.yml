@@ -1,0 +1,77 @@
+name: Pong 6.18.63 source-only integration
+
+# This workflow runs only on the explicit preparation branch. It never
+# builds/flashes a phone image and never modifies the 6.18.60 source branch.
+on:
+  push:
+    branches:
+      - pong-a17-6.18.63-prep
+    paths:
+      - .github/workflows/pong618-63-source-integration.yml
+  workflow_dispatch:
+
+concurrency:
+  group: pong-61863-source-integration
+  cancel-in-progress: false
+
+jobs:
+  integrate-source:
+    if: github.repository == 'Szmazwidi/android_kernel_nothing_sm8475-6.18'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout exact preparation revision
+        uses: actions/checkout@v4
+        with:
+          ref: pong-a17-6.18.63-prep
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: true
+
+      - name: Configure local merge identity
+        run: |
+          git config user.name "pong-source-integration[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      - name: Attempt validated v6.18.60 to v6.18.63 integration
+        id: integrate
+        shell: bash
+        env:
+          PONG_61863_BASE_REF: pong-a17-6.18.60
+          PONG_61863_INTEGRATION_BRANCH: pong-a17-6.18.63-integration
+        run: |
+          set -Eeuo pipefail
+          bash tools/pong618-sync-stable-6.18.63.sh
+
+      - name: Publish new isolated source-only branch on success
+        if: steps.integrate.outcome == 'success'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          CANDIDATE="../pong-kernel-6.18.63-integration"
+          BRANCH="pong-a17-6.18.63-integration"
+          test -d "$CANDIDATE/.git" || git -C "$CANDIDATE" rev-parse --show-toplevel
+          test "$(make -s -C "$CANDIDATE" kernelversion)" = "6.18.63"
+          git -C "$CANDIDATE" diff --check
+          test -z "$(git -C "$CANDIDATE" status --porcelain)"
+          if git ls-remote --exit-code --heads origin "refs/heads/$BRANCH" >/dev/null; then
+            echo "STOP: the remote integration branch already exists; no push or overwrite" >&2
+            exit 75
+          fi
+          git -C "$CANDIDATE" push origin "HEAD:refs/heads/$BRANCH"
+          printf 'PUBLISHED_SOURCE_BRANCH=%s\n' "$BRANCH" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Build, ABI, signatures, QEMU and phone tests remain PENDING.\n' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve logs and conflict evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong618-63-source-integration-report
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            ../pong-kernel-6.18.63-reports/**
