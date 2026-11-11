@@ -1,0 +1,57 @@
+name: Pong 6.18.60 to 6.18.63 full patch preservation audit
+on:
+  push:
+    branches: [pong-a17-6.18.63-prep]
+    paths:
+      - .github/workflows/pong618-patch-preservation-audit.yml
+      - tools/pong618-audit-60-to-63.py
+  pull_request:
+    branches: [pong-a17-6.18.60]
+    paths:
+      - .github/workflows/pong618-patch-preservation-audit.yml
+      - tools/pong618-audit-60-to-63.py
+  workflow_dispatch:
+
+concurrency:
+  group: pong-61860-to-61863-preservation
+  cancel-in-progress: false
+
+jobs:
+  whole-tree-audit:
+    if: github.repository == 'Szmazwidi/android_kernel_nothing_sm8475-6.18'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source with complete history (no phone operations)
+        uses: actions/checkout@v4
+        with:
+          ref: pong-a17-6.18.63-prep
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Validate audit script and checkout isolated integrated source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile tools/pong618-audit-60-to-63.py
+          cp tools/pong618-audit-60-to-63.py "$RUNNER_TEMP/pong618-audit.py"
+          # This is deliberately read-only: never rewrite the successful
+          # 6.18.63 integration branch nor the functional 6.18.60 branch.
+          git checkout --detach d444348c03f7605f97eaa99423483e3bc91420bc
+          test "$(git rev-parse HEAD)" = "d444348c03f7605f97eaa99423483e3bc91420bc"
+          test "$(make -s kernelversion)" = "6.18.63"
+      - name: Audit entire baseline-specific source tree, not merely 15 conflicts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 "$RUNNER_TEMP/pong618-audit.py" --output "$GITHUB_WORKSPACE/pong61863-source-audit"
+      - name: Retain complete audit evidence on success or failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong61863-custom-patches-source-audit
+          if-no-files-found: error
+          retention-days: 30
+          path: pong61863-source-audit/
