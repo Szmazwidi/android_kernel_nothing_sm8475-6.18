@@ -128,17 +128,30 @@ def main():
         fatal("Changed unmerged path set: " + repr(sorted(actual.symmetric_difference(EXPECTED))))
     if git_bytes(worktree, "rev-parse", "--verify", "HEAD").decode().strip() != "58b289d57b3d1f4b6fa6bb51db13920f459ae153":
         fatal("Unexpected baseline commit HEAD")
+    # Git records an *annotated tag object* in MERGE_HEAD when merging the
+    # tag by name. Verify both raw tag identity and the peeled stable commit.
+    # Never weaken this to an ancestry-only check or compare the tag object
+    # directly to a commit SHA.
     observed_merge_head = git_bytes(worktree, "rev-parse", "--verify", "MERGE_HEAD").decode().strip()
-    expected_merge_head = "1cdda838e8475edf89b73ff0cc952005dd0b1fa7"
+    peeled_merge_commit = git_bytes(worktree, "rev-parse", "--verify", "MERGE_HEAD^{commit}").decode().strip()
+    observed_object_type = git_bytes(worktree, "cat-file", "-t", "MERGE_HEAD").decode().strip()
+    stable_tag_object = git_bytes(worktree, "rev-parse", "--verify", "refs/tags/v6.18.63").decode().strip()
+    stable_tag_commit = git_bytes(worktree, "rev-parse", "--verify", "refs/tags/v6.18.63^{commit}").decode().strip()
+    expected_stable_commit = "1cdda838e8475edf89b73ff0cc952005dd0b1fa7"
     print("MERGE_IDENTITY_DIAGNOSTIC:", json.dumps({
-        "observed_merge_head": observed_merge_head,
-        "expected_stable_commit": expected_merge_head,
-        "upstream_tag_commit": git_bytes(worktree, "rev-parse", "--verify", "v6.18.63^{commit}").decode().strip(),
-        "git_version": git_bytes(worktree, "--version").decode().strip(),
+        "merge_head_object": observed_merge_head,
+        "merge_head_type": observed_object_type,
+        "peeled_merge_commit": peeled_merge_commit,
+        "stable_tag_object": stable_tag_object,
+        "stable_tag_commit": stable_tag_commit,
+        "expected_stable_commit": expected_stable_commit,
     }), flush=True)
-    if observed_merge_head != expected_merge_head:
-        fatal("Unexpected upstream MERGE_HEAD: observed=" + repr(observed_merge_head)
-              + " expected=" + expected_merge_head)
+    if (peeled_merge_commit != expected_stable_commit
+        or stable_tag_commit != expected_stable_commit
+        or observed_object_type not in ("tag", "commit")
+        or observed_merge_head != (stable_tag_object if observed_object_type == "tag"
+                                  else expected_stable_commit)):
+        fatal("MERGE_HEAD does not match the exact pinned official stable tag and commit")
 
     results = {}
     for path, (expected, count, policy) in sorted(EXPECTED.items()):
