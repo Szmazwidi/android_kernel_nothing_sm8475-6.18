@@ -14,7 +14,7 @@ INTEGRATION_BRANCH="${PONG_61863_INTEGRATION_BRANCH:-pong-a17-6.18.63-integratio
 
 die() { printf 'STOP: %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"; }
-for cmd in git make awk grep date tee; do need "$cmd"; done
+for cmd in git make awk grep date tee python3 cp; do need "$cmd"; done
 
 REPO="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)" || die "Not in a Git checkout"
 cd "$REPO"
@@ -112,9 +112,23 @@ if ! git -C "$WORKTREE" merge --no-ff --no-edit "$STABLE_TAG"; then
         printf 'protected_partitions_unchanged=NO_PHONE_OPERATIONS\n'
         printf 'recovery_status=NOT_REQUALIFIED\n'
     } > "$REPORT"
-    printf '\nmerge_status=FAILED_OR_CONFLICT; conflict_count=%s\n' "$CONFLICT_COUNT"
+    printf '\nmerge_status=CONFLICTS_REVIEW_REQUIRED; conflict_count=%s\n' "$CONFLICT_COUNT"
     printf 'report=%s\n' "$REPORT"
-    die "Resolve conflicts by reviewing exact stage blobs; no original branch or phone changes."
+    if [[ "${PONG_61863_REVIEWED_RESOLVE:-0}" != "1" ]]; then
+        die "Resolve conflicts by reviewing exact stage blobs; no original branch or phone changes."
+    fi
+    printf '\n[3b/5] Apply reviewed, exact-SHA-pinned 15-file conflict resolutions\n'
+    python3 "$REPO/tools/pong618-reviewed-63-merge.py" \
+        --worktree "$WORKTREE" \
+        --report "$LOG_DIR/$RUN_ID-reviewed-conflict-resolution.json" --dry-run
+    python3 "$REPO/tools/pong618-reviewed-63-merge.py" \
+        --worktree "$WORKTREE" \
+        --report "$LOG_DIR/$RUN_ID-reviewed-conflict-resolution.json"
+    git -C "$WORKTREE" diff --cached --check ||
+        die "Reviewed conflict stage produced whitespace errors"
+    git -C "$WORKTREE" commit --no-edit ||
+        die "Reviewed stable merge commit was not created"
+    printf 'merge_status=REVIEWED_SOURCE_MERGE_COMMITTED\n'
 fi
 
 printf '\n[4/5] Source-level checks (NOT a build or phone verification)\n'
