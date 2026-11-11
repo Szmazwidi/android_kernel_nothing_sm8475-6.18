@@ -1480,8 +1480,9 @@ struct xhci_port {
 	int			hcd_portnum;
 	struct xhci_hub		*rhub;
 	struct xhci_port_cap	*port_cap;
-	unsigned int		link_inactive:1;
+	/* Preserve lpm_incapable at bit 0 for Pong/ACK 6.18.60 ABI. */
 	unsigned int		lpm_incapable:1;
+	unsigned int		link_inactive:1;
 	unsigned long		resume_timestamp;
 	bool			rexit_active;
 	/* Slot ID is the index of the device directly connected to the port */
