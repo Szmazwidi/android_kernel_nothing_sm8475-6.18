@@ -72,12 +72,24 @@ jobs:
           printf 'PUBLISHED_SOURCE_BRANCH=%s\n' "$BRANCH" >> "$GITHUB_STEP_SUMMARY"
           printf 'Build, ABI, signatures, QEMU and phone tests remain PENDING.\n' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Stage diagnostics within workspace
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/pong61863-diagnostics"
+          SOURCE="$GITHUB_WORKSPACE/../pong-kernel-6.18.63-reports"
+          if [[ -d "$SOURCE" ]]; then
+            cp -a "$SOURCE/." "$GITHUB_WORKSPACE/pong61863-diagnostics/"
+          else
+            printf 'No integration reports were generated.\n' > "$GITHUB_WORKSPACE/pong61863-diagnostics/NO_REPORT.txt"
+          fi
+
       - name: Preserve logs and conflict evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pong618-63-source-integration-report
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
-          path: |
-            ../pong-kernel-6.18.63-reports/**
+          path: pong61863-diagnostics/
