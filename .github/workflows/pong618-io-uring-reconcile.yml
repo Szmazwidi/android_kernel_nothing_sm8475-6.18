@@ -1,0 +1,47 @@
+name: Pong 6.18.63 io_uring Android ABI preservation
+on:
+  push:
+    branches: [pong-a17-6.18.63-ack-preserve]
+    paths:
+      - .github/workflows/pong618-io-uring-reconcile.yml
+  workflow_dispatch:
+jobs:
+  reconcile-and-publish-source:
+    if: github.repository == 'Szmazwidi/android_kernel_nothing_sm8475-6.18'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout candidate with source history
+        uses: actions/checkout@v4
+        with:
+          ref: pong-a17-6.18.63-ack-preserve
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: true
+      - name: Apply exact-source Android io_uring ABI fix
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(make -s kernelversion)" = "6.18.63"
+          git config user.name "pong-source-integration[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          test -z "$(git status --porcelain)"
+          python3 -m py_compile tools/pong618-io-uring-reconcile.py
+          python3 tools/pong618-io-uring-reconcile.py
+          git diff --check
+          git add io_uring/io_uring.c
+          git diff --cached --check
+          test "$(git diff --cached --name-only)" = "io_uring/io_uring.c"
+          git commit -m "io_uring: restore Android r5 task-work ABI against upstream 6.18.63"
+          git push origin HEAD:refs/heads/pong-a17-6.18.63-ack-preserve
+          echo "PUBLISHED_SOURCE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Save reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong61863-io-uring-source-reconcile
+          if-no-files-found: warn
+          retention-days: 30
+          path: pong61863-io-uring-reconciliation.json
