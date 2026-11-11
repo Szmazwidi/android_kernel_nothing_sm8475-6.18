@@ -8,6 +8,12 @@ on:
       - pong-a17-6.18.63-prep
     paths:
       - .github/workflows/pong618-63-source-integration.yml
+  pull_request:
+    branches:
+      - pong-a17-6.18.60
+    paths:
+      - .github/workflows/pong618-63-source-integration.yml
+      - tools/pong618-sync-stable-6.18.63.sh
   workflow_dispatch:
 
 concurrency:
