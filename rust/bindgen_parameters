@@ -26,6 +26,9 @@
 # enums that appear in indirect function calls should specify a cfi type
 --newtype-enum lru_status
 --with-attribute-custom-enum=lru_status='#[cfi_encoding="10lru_status"]'
+--newtype-enum dma_data_direction
+--newtype-enum hrtimer_restart
+--newtype-enum irqreturn
 
 # `seccomp`'s comment gets understood as a doctest
 --no-doc-comments

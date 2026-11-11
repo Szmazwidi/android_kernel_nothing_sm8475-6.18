@@ -33,8 +33,17 @@ struct file *backing_file_open(const struct path *user_path, int flags,
 			       const struct path *real_path,
 			       const struct cred *cred)
 {
+	struct inode *real_inode = d_inode(real_path->dentry);
 	struct file *f;
 	int error;
+
+	/* Honor immutable and append-only state of the backing inode. */
+	if ((flags & O_ACCMODE) != O_RDONLY) {
+		if (IS_IMMUTABLE(real_inode))
+			return ERR_PTR(-EPERM);
+		if (IS_APPEND(real_inode) && !(flags & O_APPEND))
+			return ERR_PTR(-EPERM);
+	}
 
 	f = alloc_empty_backing_file(flags, cred);
 	if (IS_ERR(f))
