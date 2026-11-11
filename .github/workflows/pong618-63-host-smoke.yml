@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq clang lld llvm libelf-dev libssl-dev bc bison flex dwarves zstd lz4
+          sudo apt-get install -y -qq clang lld llvm libdw-dev libelf-dev libssl-dev bc bison flex dwarves zstd lz4
 
       - name: Generate arm64 GKI configuration
         shell: bash
