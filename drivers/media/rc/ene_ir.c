@@ -1112,7 +1112,7 @@ static void ene_remove(struct pnp_dev *pnp_dev)
 	free_irq(dev->irq, dev);
 	timer_delete_sync(&dev->tx_sim_timer);
 	release_region(dev->hw_io, ENE_IO_SIZE);
-	rc_free_device(dev->rdev);
+	/* rc_unregister_device() already drops the final rdev reference. */
 	kfree(dev);
 }
 
