@@ -74,9 +74,47 @@ printf '\n[3/5] Make independent worktree and integrate actual stable commits\n'
 git worktree add -b "$INTEGRATION_BRANCH" "$WORKTREE" "$BASE_SHA"
 if ! git -C "$WORKTREE" merge --no-ff --no-edit "$STABLE_TAG"; then
     git -C "$WORKTREE" status --short > "$LOG_DIR/$RUN_ID-merge-conflicts.txt" || true
-    printf '\nmerge_status=FAILED_OR_CONFLICT\n'
-    printf 'preserved_worktree=%s\n' "$WORKTREE"
-    die "Manual conflict analysis required. Nothing on the original branch or phone was modified."
+    git -C "$WORKTREE" diff --name-only --diff-filter=U > "$LOG_DIR/$RUN_ID-unmerged-paths.txt" || true
+    git -C "$WORKTREE" ls-files -u > "$LOG_DIR/$RUN_ID-unmerged-stages.txt" || true
+    CONFLICT_DIR="$LOG_DIR/$RUN_ID-conflict-context"
+    mkdir -p "$CONFLICT_DIR"
+    CONFLICT_COUNT=0
+    while IFS= read -r path; do
+        [[ -n "$path" ]] || continue
+        (( CONFLICT_COUNT += 1 ))
+        mkdir -p "$CONFLICT_DIR/$(dirname "$path")"
+        # Preserve all three index stages and the conflict-marked working copy.
+        # No guessed resolution, no automatic preference for ours/theirs.
+        for stage in 1 2 3; do
+            git -C "$WORKTREE" show ":$stage:$path" > "$CONFLICT_DIR/$path.stage-$stage" || true
+        done
+        if [[ -f "$WORKTREE/$path" ]]; then
+            cp -- "$WORKTREE/$path" "$CONFLICT_DIR/$path.conflicted"
+        fi
+        printf '\n===== CONFLICT: %s =====\n' "$path"
+        if [[ -f "$WORKTREE/$path" ]]; then
+            awk '/^<<<<<<< /,/^>>>>>>> / { if (++n <= 130) print }' "$WORKTREE/$path"
+        fi
+    done < "$LOG_DIR/$RUN_ID-unmerged-paths.txt"
+    {
+        printf 'stage_status=SOURCE_MERGE_CONFLICTS_REQUIRING_REVIEW\n'
+        printf 'evidence_level=HOST_VERIFIED_SOURCE_ONLY\n'
+        printf 'base_sha=%s\n' "$BASE_SHA"
+        printf 'upstream_sha=%s\n' "$TAG_SHA"
+        printf 'upstream_commits=%s\n' "$PATCH_COUNT"
+        printf 'conflict_count=%s\n' "$CONFLICT_COUNT"
+        printf 'conflict_paths=%s\n' "$LOG_DIR/$RUN_ID-unmerged-paths.txt"
+        printf 'preserved_worktree=%s\n' "$WORKTREE"
+        printf 'tests_failed=git_merge\n'
+        printf 'tests_passed=stable_SHA,ancestor_checks\n'
+        printf 'module_ABI=NOT_TESTED\nphone_boot=NOT_TESTED\n'
+        printf 'historical_reuse_audit=Existing U59 conflict resolutions retained for review; no arbitrary automatic ours/theirs\n'
+        printf 'protected_partitions_unchanged=NO_PHONE_OPERATIONS\n'
+        printf 'recovery_status=NOT_REQUALIFIED\n'
+    } > "$REPORT"
+    printf '\nmerge_status=FAILED_OR_CONFLICT; conflict_count=%s\n' "$CONFLICT_COUNT"
+    printf 'report=%s\n' "$REPORT"
+    die "Resolve conflicts by reviewing exact stage blobs; no original branch or phone changes."
 fi
 
 printf '\n[4/5] Source-level checks (NOT a build or phone verification)\n'
