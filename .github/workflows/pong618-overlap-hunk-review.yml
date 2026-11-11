@@ -1,0 +1,41 @@
+name: Pong 6.18.63 full overlap hunk preservation review
+on:
+  push:
+    branches: [pong-a17-6.18.63-ack-preserve]
+    paths:
+      - tools/pong618-overlap-hunk-review.py
+      - .github/workflows/pong618-overlap-hunk-review.yml
+  pull_request:
+    branches: [pong-a17-6.18.63-integration]
+    paths:
+      - tools/pong618-overlap-hunk-review.py
+      - .github/workflows/pong618-overlap-hunk-review.yml
+  workflow_dispatch:
+jobs:
+  audit-all-overlaps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout complete source history with blobless fetch
+        uses: actions/checkout@v4
+        with:
+          ref: pong-a17-6.18.63-ack-preserve
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Audit all 301 dual-changed source paths
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile tools/pong618-overlap-hunk-review.py
+          python3 tools/pong618-overlap-hunk-review.py --output pong61863-hunk-audit
+      - name: Upload full source-hunk evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong61863-ack-source-hunk-audit
+          if-no-files-found: warn
+          retention-days: 30
+          path: pong61863-hunk-audit/
