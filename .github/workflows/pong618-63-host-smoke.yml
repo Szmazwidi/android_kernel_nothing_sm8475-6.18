@@ -5,6 +5,11 @@ on:
       - pong-a17-6.18.63-prep
     paths:
       - .github/workflows/pong618-63-host-smoke.yml
+  pull_request:
+    branches:
+      - pong-a17-6.18.60
+    paths:
+      - .github/workflows/pong618-63-host-smoke.yml
   workflow_dispatch:
 
 concurrency:
