@@ -5196,7 +5196,7 @@ static void bpf_scx_unreg(void *kdata, struct bpf_link *link)
 	struct sched_ext_ops *ops = kdata;
 	struct scx_sched *sch = ops->priv;
 
-	scx_disable(sch, SCX_EXIT_UNREG);
+	scx_disable(SCX_EXIT_UNREG);
 	scx_flush_disable_work(sch);
 	kobject_put(&sch->kobj);
 }
