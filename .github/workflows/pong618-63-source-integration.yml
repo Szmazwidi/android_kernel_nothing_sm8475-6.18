@@ -2,18 +2,9 @@ name: Pong 6.18.63 source-only integration
 
 # This workflow runs only on the explicit preparation branch. It never
 # builds/flashes a phone image and never modifies the 6.18.60 source branch.
+# The stable source merge already succeeded in run 43083850830.
+# Historical repro only: stop rerunning an expensive source merge on each PR update.
 on:
-  push:
-    branches:
-      - pong-a17-6.18.63-prep
-    paths:
-      - .github/workflows/pong618-63-source-integration.yml
-  pull_request:
-    branches:
-      - pong-a17-6.18.60
-    paths:
-      - .github/workflows/pong618-63-source-integration.yml
-      - tools/pong618-sync-stable-6.18.63.sh
   workflow_dispatch:
 
 concurrency:
