@@ -1,0 +1,44 @@
+name: Pong 6.18.63 preserve Android Rust IdPool API
+on:
+  push:
+    branches: [pong-a17-6.18.63-ack-preserve]
+    paths:
+      - rust/kernel/id_pool.rs
+      - rust/kernel/bitmap.rs
+      - tools/pong618-rust-idpool-guard.py
+      - .github/workflows/pong618-rust-idpool-guard.yml
+  pull_request:
+    branches: [pong-a17-6.18.63-integration]
+    paths:
+      - rust/kernel/id_pool.rs
+      - rust/kernel/bitmap.rs
+      - tools/pong618-rust-idpool-guard.py
+      - .github/workflows/pong618-rust-idpool-guard.yml
+  workflow_dispatch:
+jobs:
+  api-static:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate without changing stable baseline
+        uses: actions/checkout@v4
+        with:
+          ref: pong-a17-6.18.63-ack-preserve
+          persist-credentials: false
+      - name: Validate source syntax and Rust API call sites
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile tools/pong618-rust-idpool-guard.py
+          python3 tools/pong618-rust-idpool-guard.py
+          git diff --check
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong61863-rust-android-api-audit
+          if-no-files-found: warn
+          retention-days: 30
+          path: pong61863-rust-api-report.json
