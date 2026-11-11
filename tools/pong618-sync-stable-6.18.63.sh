@@ -31,6 +31,13 @@ printf 'utc=%s\nrepo=%s\nworktree=%s\nreport=%s\n' "$RUN_ID" "$REPO" "$WORKTREE"
 
 # Do not rewrite a dirty original checkout or reuse an old experimental worktree.
 [[ -z "$(git status --porcelain)" ]] || die "Original checkout is dirty; keep all local changes and rerun after reviewing them"
+if ! git rev-parse --verify --quiet "${BASE_REF}^{commit}" >/dev/null; then
+    # A fresh checkout of the preparation branch may not have a local baseline branch.
+    if [[ "$BASE_REF" == "pong-a17-6.18.60" ]] && git remote get-url origin >/dev/null 2>&1; then
+        git fetch origin "+refs/heads/pong-a17-6.18.60:refs/remotes/origin/pong-a17-6.18.60"
+        BASE_REF="refs/remotes/origin/pong-a17-6.18.60"
+    fi
+fi
 git rev-parse --verify --quiet "${BASE_REF}^{commit}" >/dev/null || die "Missing base ref $BASE_REF"
 BASE_SHA="$(git rev-parse "${BASE_REF}^{commit}")"
 printf 'base_ref=%s\nbase_sha=%s\n' "$BASE_REF" "$BASE_SHA"
