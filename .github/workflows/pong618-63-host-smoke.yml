@@ -1,0 +1,105 @@
+name: Pong 6.18.63 arm64 host smoke build
+on:
+  push:
+    branches:
+      - pong-a17-6.18.63-prep
+    paths:
+      - .github/workflows/pong618-63-host-smoke.yml
+  workflow_dispatch:
+
+concurrency:
+  group: pong-61863-arm64-host-smoke
+  cancel-in-progress: false
+
+jobs:
+  arm64-smoke:
+    if: github.repository == 'Szmazwidi/android_kernel_nothing_sm8475-6.18'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    env:
+      EXPECTED_KERNEL_SHA: d444348c03f7605f97eaa99423483e3bc91420bc
+      EXPECTED_UPSTREAM_SHA: 1cdda838e8475edf89b73ff0cc952005dd0b1fa7
+    steps:
+      - name: Checkout exact source-only integrated kernel commit
+        uses: actions/checkout@v4
+        with:
+          ref: d444348c03f7605f97eaa99423483e3bc91420bc
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prepare reproducible report and inspect host
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/pong61863-smoke"
+          {
+            printf 'source_sha=%s\n' "$(git rev-parse HEAD)"
+            printf 'kernelversion=%s\n' "$(make -s kernelversion)"
+            printf 'runner=%s\n' "${RUNNER_OS:-unknown}"
+            printf 'clang=%s\n' "$(clang --version | head -n 1)"
+            printf 'ld.lld=%s\n' "$(ld.lld --version | head -n 1)"
+            printf 'host_toolchain=NON_RELEASE_SYSTEM_CLANG\n'
+            printf 'runtime=NOT_TESTED\nmodule_ABI=NOT_TESTED\n'
+            printf 'phone_operations=0\n'
+          } | tee pong61863-smoke/identity.txt
+          test "$(git rev-parse HEAD)" = "$EXPECTED_KERNEL_SHA"
+          test "$(make -s kernelversion)" = "6.18.63"
+          test -f arch/arm64/configs/gki_defconfig
+          test -f arch/arm64/configs/pong_lab.fragment
+          grep -q '^CONFIG_MODULE_SIG_FORCE=y' arch/arm64/configs/gki_defconfig
+
+      - name: Install build prerequisites (host smoke only)
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libelf-dev libssl-dev bc bison flex dwarves zstd lz4
+
+      - name: Generate arm64 GKI configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/pong61863-out"
+          set +e
+          make ARCH=arm64 LLVM=1 O="$RUNNER_TEMP/pong61863-out" gki_defconfig > pong61863-smoke/config.log 2>&1
+          rc=$?
+          set -e
+          cat pong61863-smoke/config.log
+          printf 'config_exit=%s\n' "$rc" >> pong61863-smoke/identity.txt
+          test "$rc" -eq 0
+          test -f "$RUNNER_TEMP/pong61863-out/.config"
+          grep -q '^CONFIG_MODULE_SIG_FORCE=y' "$RUNNER_TEMP/pong61863-out/.config"
+          if grep -q '^CONFIG_PONG_LAB_GUARDS=y' "$RUNNER_TEMP/pong61863-out/.config"; then
+            echo "STOP: LAB-only guard unexpectedly enabled in community GKI build" >&2
+            exit 3
+          fi
+
+      - name: Build arm64 Image with system clang (not release qualification)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set +e
+          make ARCH=arm64 LLVM=1 O="$RUNNER_TEMP/pong61863-out" -j4 Image > pong61863-smoke/build.log 2>&1
+          rc=$?
+          set -e
+          tail -n 160 pong61863-smoke/build.log || true
+          printf 'image_build_exit=%s\n' "$rc" >> pong61863-smoke/identity.txt
+          if [[ "$rc" -ne 0 ]]; then
+            echo "HOST_SMOKE_IMAGE_FAILED; the Android-pinned Kleaf build has NOT run." >&2
+            exit "$rc"
+          fi
+          IMAGE="$RUNNER_TEMP/pong61863-out/arch/arm64/boot/Image"
+          test -s "$IMAGE"
+          sha256sum "$IMAGE" | tee pong61863-smoke/Image.SHA256
+          printf 'image_bytes=%s\n' "$(stat -c %s "$IMAGE")" >> pong61863-smoke/identity.txt
+          printf 'stage_status=HOST_ARM64_SMOKE_COMPILED_ANDROID_BUILD_PENDING\n' >> pong61863-smoke/identity.txt
+
+      - name: Preserve host diagnostics regardless of outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong61863-arm64-host-smoke
+          if-no-files-found: error
+          retention-days: 30
+          path: pong61863-smoke/
