@@ -1,0 +1,40 @@
+name: Pong specific 6.18.60 patch ledger audit
+on:
+  push:
+    branches: [pong-a17-6.18.63-ack-preserve]
+    paths:
+      - tools/pong618-pong-commit-audit.py
+      - .github/workflows/pong618-pong-commit-audit.yml
+  pull_request:
+    branches: [pong-a17-6.18.63-integration]
+    paths:
+      - tools/pong618-pong-commit-audit.py
+      - .github/workflows/pong618-pong-commit-audit.yml
+  workflow_dispatch:
+jobs:
+  pong-ledger:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact candidate and history
+        uses: actions/checkout@v4
+        with:
+          ref: pong-a17-6.18.63-ack-preserve
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Verify every Pong-labelled baseline commit and active source path
+        run: |
+          set -Eeuo pipefail
+          python3 -m py_compile tools/pong618-pong-commit-audit.py
+          python3 tools/pong618-pong-commit-audit.py --output pong61863-pong-ledger
+      - name: Preserve Pong patch ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pong61863-pong-labelled-patch-ledger
+          retention-days: 30
+          if-no-files-found: error
+          path: pong61863-pong-ledger/
