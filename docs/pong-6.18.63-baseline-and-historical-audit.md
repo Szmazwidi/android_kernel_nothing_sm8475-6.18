@@ -22,13 +22,13 @@ The CLG74 modules head separately contains `slimbus: initialize NGD up work befo
 
 ## historical_reuse_audit — SQLite index, 5.15 archive
 
-Read-only source: `legacy515-index.sqlite3`, indexed from 49,555 files and 286,054 extracted snippets (index generated 2026-10-18). Queries were limited to indexed evidence snippets; not a complete source-code audit.
+Read-only source: `legacy515-index.sqlite3`, indexed from 49,555 files and 286,054 extracted snippets (index generated 2026-10-18). Counts were rechecked via case-sensitive SQLite `evidence.excerpt LIKE '%term%'` on 2026-11-11; queries were limited to indexed evidence snippets, not a complete source-code audit.
 
 - `IPA_CLIENT_APPS_WAN_LOW_LAT_CONS`: 2 indexed snippets, both in the stage `pong317-nokaslr-trial-nlt_vafn` 5.10 dmesg captures. They show `Pending Wakeup Sources: IPA_CLIENT_APPS_WAN_LOW_LAT_CONS rmnet_ctl`. Analogous symptom, **no proven same root cause or portable fix**.
 - `slimbus`: 54 snippets, including `pong-publish14-vendor-build-bridge.json` and `pong-publish15-verified-api-batch.json`, which record missing `linux/slimbus/slimbus.h` during a 5.15 vendor audio build. This was an API/header problem, **not** evidence of the same runtime-PM vote leak.
-- `ufshcd`: 445 snippets, including `pong225-audit-udn7oze1.zip`, which references older `ufshcd-crypto-qti.ko` artifacts. **Do not reuse binary modules**.
-- `Module.symvers`: 4,191 snippets, including `pong-publish13-kbuild-config-includes.json`, recording unresolved exports and missing symbol-version metadata. Audit imported CRCs and providers after rebuilding the full 6.18.63 bank.
-- `vermagic`: 74 snippets, including `pong199g-waipio-rpmh-joint-modpost-report.txt`. Old 5.15 module identity cannot establish 6.18.63 loadability.
+- `ufshcd`: 406 snippets, including `pong225-audit-udn7oze1.zip`, which references older `ufshcd-crypto-qti.ko` artifacts. **Do not reuse binary modules**.
+- `Module.symvers`: 4,190 snippets, including `pong-publish13-kbuild-config-includes.json`, recording unresolved exports and missing symbol-version metadata. Audit imported CRCs and providers after rebuilding the full 6.18.63 bank.
+- `vermagic`: 75 snippets, including `pong199g-waipio-rpmh-joint-modpost-report.txt`. Old 5.15 module identity cannot establish 6.18.63 loadability.
 
 No historical item above is a verified code-level fix suitable for direct transfer. The 6.6/6.12 source branches were not examined in this batch.
 
