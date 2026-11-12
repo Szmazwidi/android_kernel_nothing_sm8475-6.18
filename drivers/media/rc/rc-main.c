@@ -1611,6 +1611,7 @@ static void rc_dev_release(struct device *device)
 {
 	struct rc_dev *dev = to_rc_dev(device);
 
+	ir_raw_event_free(dev);
 	kfree(dev);
 }
 
