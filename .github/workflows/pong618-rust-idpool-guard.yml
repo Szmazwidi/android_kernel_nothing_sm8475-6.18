@@ -1,14 +1,7 @@
 name: Pong 6.18.63 preserve Android Rust IdPool API
 on:
   push:
-    branches: [pong-a17-6.18.63-ack-preserve]
-    paths:
-      - rust/kernel/id_pool.rs
-      - rust/kernel/bitmap.rs
-      - tools/pong618-rust-idpool-guard.py
-      - .github/workflows/pong618-rust-idpool-guard.yml
-  pull_request:
-    branches: [pong-a17-6.18.63-integration]
+    branches: [pong-a17-6.18.63-rc-cleanup]
     paths:
       - rust/kernel/id_pool.rs
       - rust/kernel/bitmap.rs
@@ -25,7 +18,7 @@ jobs:
       - name: Checkout candidate without changing stable baseline
         uses: actions/checkout@v4
         with:
-          ref: pong-a17-6.18.63-ack-preserve
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Validate source syntax and Rust API call sites
         shell: bash

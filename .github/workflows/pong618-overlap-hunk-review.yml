@@ -1,12 +1,7 @@
 name: Pong 6.18.63 full overlap hunk preservation review
 on:
   push:
-    branches: [pong-a17-6.18.63-ack-preserve]
-    paths:
-      - tools/pong618-overlap-hunk-review.py
-      - .github/workflows/pong618-overlap-hunk-review.yml
-  pull_request:
-    branches: [pong-a17-6.18.63-integration]
+    branches: [pong-a17-6.18.63-rc-cleanup]
     paths:
       - tools/pong618-overlap-hunk-review.py
       - .github/workflows/pong618-overlap-hunk-review.yml
@@ -21,7 +16,7 @@ jobs:
       - name: Checkout complete source history with blobless fetch
         uses: actions/checkout@v4
         with:
-          ref: pong-a17-6.18.63-ack-preserve
+          ref: ${{ github.sha }}
           fetch-depth: 0
           filter: blob:none
           persist-credentials: false

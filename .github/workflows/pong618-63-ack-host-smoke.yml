@@ -2,12 +2,7 @@ name: Pong 6.18.63 ACK-preservation arm64 host build
 on:
   push:
     branches:
-      - pong-a17-6.18.63-ack-preserve
-    paths:
-      - .github/workflows/pong618-63-ack-host-smoke.yml
-  pull_request:
-    branches:
-      - pong-a17-6.18.63-integration
+      - pong-a17-6.18.63-rc-cleanup
     paths:
       - .github/workflows/pong618-63-ack-host-smoke.yml
   workflow_dispatch:
@@ -24,13 +19,13 @@ jobs:
     permissions:
       contents: read
     env:
-      EXPECTED_KERNEL_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPECTED_KERNEL_SHA: ${{ github.sha }}
       EXPECTED_UPSTREAM_SHA: 1cdda838e8475edf89b73ff0cc952005dd0b1fa7
     steps:
       - name: Checkout exact source-only integrated kernel commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 1
           persist-credentials: false
 

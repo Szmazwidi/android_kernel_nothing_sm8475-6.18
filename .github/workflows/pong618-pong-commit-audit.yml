@@ -1,12 +1,7 @@
 name: Pong specific 6.18.60 patch ledger audit
 on:
   push:
-    branches: [pong-a17-6.18.63-ack-preserve]
-    paths:
-      - tools/pong618-pong-commit-audit.py
-      - .github/workflows/pong618-pong-commit-audit.yml
-  pull_request:
-    branches: [pong-a17-6.18.63-integration]
+    branches: [pong-a17-6.18.63-rc-cleanup]
     paths:
       - tools/pong618-pong-commit-audit.py
       - .github/workflows/pong618-pong-commit-audit.yml
@@ -21,7 +16,7 @@ jobs:
       - name: Checkout exact candidate and history
         uses: actions/checkout@v4
         with:
-          ref: pong-a17-6.18.63-ack-preserve
+          ref: ${{ github.sha }}
           fetch-depth: 0
           filter: blob:none
           persist-credentials: false
